@@ -1,0 +1,23 @@
+{
+  "name": "leave-service",
+  "version": "1.0.0",
+  "type": "module",
+  "main": "dist/app.js",
+  "scripts": {
+    "dev": "tsx watch src/app.ts",
+    "start": "node dist/app.js",
+    "build": "tsc"
+  },
+  "dependencies": {
+    "dotenv": "^16.0.0",
+    "express": "^4.18.0",
+    "mongoose": "^7.0.0",
+    "cookie-parser": "^1.4.6",
+    "jsonwebtoken": "^9.0.0",
+    "bcryptjs": "^2.4.3"
+  },
+  "devDependencies": {
+    "tsx": "^4.22.3",
+    "typescript": "^5.9.3"
+  }
+}
