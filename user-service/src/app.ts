@@ -1,23 +1,29 @@
 import express from 'express';
 import dotenv from 'dotenv';
-import connectDB from './db.js';
+import connectDB from './db.ts';
 import authRouter from './routes/auth.ts';
-
-dotenv.config();
+import { serviceRegistry } from './shared-config/serviceRegistry';
+import { config } from './shared-config/config';
 
 const app = express();
 app.use(express.json());
 
+dotenv.config();
 connectDB();
 
-app.get('/', (req, res) => {
-  res.send('User service running');
+// Health check endpoint
+app.get('/health', (_req, res) => {
+  res.json({ status: 'healthy', service: 'user-service' });
 });
 
 // Auth routes
 app.use(authRouter);
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
+app.listen(PORT, '0.0.0.0', () => {
   console.log(`User service running on port ${PORT}`);
+
+  // Register this service in the discovery registry
+  const serviceHost = config.services.userService.host || process.env.SERVICE_HOST || `http://localhost`;
+  serviceRegistry.register('user-service', serviceHost, parseInt(PORT as string, 10));
 });

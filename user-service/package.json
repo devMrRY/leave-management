@@ -9,13 +9,14 @@
     "build": "tsc"
   },
   "dependencies": {
+    "@leave/shared-infra": "file:../packages/shared-config",
+    "bcryptjs": "^3.0.3",
+    "cookie-parser": "^1.4.6",
     "dotenv": "^16.0.0",
     "express": "^4.18.0",
-    "mongoose": "^7.0.0",
-    "bcryptjs": "^3.0.3",
-    "jsonwebtoken": "^9.0.3",
     "joi": "^18.2.1",
-    "cookie-parser": "^1.4.6"
+    "jsonwebtoken": "^9.0.3",
+    "mongoose": "^7.0.0"
   },
   "devDependencies": {
     "tsx": "^4.22.3",

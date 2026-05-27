@@ -7,13 +7,13 @@ import { verifyToken } from '../middleware/verifyToken.js';
 const router = express.Router();
 
 // POST /register - Register a new user
-router.post('/register', validateBody(registerSchema), registerController);
+router.post('/auth/register', validateBody(registerSchema), registerController);
 
 // POST /login - Authenticate user and return JWT
-router.post('/login', validateBody(loginSchema), loginController);
+router.post('/auth/login', validateBody(loginSchema), loginController);
 
 // GET /refresh-token - Issue new access token using refresh token cookie
-router.get('/refresh-token', refreshTokenController);
+router.get('/auth/refresh-token', refreshTokenController);
 
 // GET /employees - returns users managed by logged-in user
 router.get('/employees', verifyToken, getEmployeesController);

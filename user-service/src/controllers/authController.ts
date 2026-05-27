@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
-import User from '../models/User.js';
+import User from '../models/User';
 
 export const registerController = async (req: Request, res: Response) => {
     const { username, email, password, managerId } = req.body;
@@ -9,7 +9,7 @@ export const registerController = async (req: Request, res: Response) => {
         // Check for existing user
         const existingUser = await User.findOne({ $or: [{ email }, { username }] });
         if (existingUser) {
-            return res.status(409).json({ error: 'Email or username already exists' });
+            return res.status(409).json({ error: 'Email or username already exists.' });
         }
         // Use salt and pepper for hashing
         const saltRounds = 10;
@@ -21,7 +21,7 @@ export const registerController = async (req: Request, res: Response) => {
             email,
             password: hashedPassword,
             managerId: managerId || null,
-            createdBy: "admin",
+            createdBy: null,
             createdOn: Date.now(),
         });
         await user.save();

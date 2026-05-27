@@ -1,19 +1,16 @@
 version: '3.8'
-services:
-  user-service:
-    build: ./user-service
-    env_file: ./user-service/.env
-    ports:
-      - '3000:3000'
-    depends_on: []
 
-  leave-service:
-    build: ./leave-service
-    env_file: ./leave-service/.env
+services:
+
+  consul:
+    image: hashicorp/consul:latest
+    container_name: consul-server
     ports:
-      - '4000:4000'
-    depends_on:
-      - user-service
+      - '8500:8500'
+      - '8600:8600/udp'
+    environment:
+      - CONSUL_BIND_INTERFACE=eth0
+    command: agent -server -ui -bootstrap-expect=1 -client=0.0.0.0
 
   mongo:
     image: mongo:6.0
@@ -23,14 +20,78 @@ services:
     ports:
       - '27017:27017'
 
+  user-service:
+    build: ./user-service
+    env_file: ./user-service/.env
+    ports:
+      - '3000:3000'
+    depends_on:
+      - consul
+      - mongo
+    environment:
+      - DOCKER_ENV=true
+      - CONSUL_HOST=consul
+      - CONSUL_PORT=8500
+
+    develop:
+      watch:
+        - action: sync
+          path: ./user-service
+          target: /app
+          ignore:
+            - node_modules/
+
+        - action: rebuild
+          path: ./user-service/package.json
+
+  leave-service:
+    build: ./leave-service
+    env_file: ./leave-service/.env
+    ports:
+      - '4000:4000'
+    depends_on:
+      - consul
+      - mongo
+    environment:
+      - DOCKER_ENV=true
+      - CONSUL_HOST=consul
+      - CONSUL_PORT=8500
+
+    develop:
+      watch:
+        - action: sync
+          path: ./leave-service
+          target: /app
+          ignore:
+            - node_modules/
+
+        - action: rebuild
+          path: ./leave-service/package.json
+
   api-gateway:
     build: ./api-gateway
     env_file: ./api-gateway/.env
     ports:
       - '5000:5000'
     depends_on:
+      - consul
       - user-service
       - leave-service
+    environment:
+      - DOCKER_ENV=true
+      - CONSUL_HOST=consul
+      - CONSUL_PORT=8500
+
+    develop:
+      watch:
+        - action: sync
+          path: ./api-gateway
+          target: /app
+          ignore:
+            - node_modules/
+
+        - action: rebuild
+          path: ./api-gateway/package.json
 
 volumes:
   mongo-data:
