@@ -2,6 +2,8 @@ import { Request, Response } from 'express';
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
 import User from '../models/User';
+import { logger } from '../logger';
+import { getTraceContext } from '../helpers/tracing';
 
 export const registerController = async (req: Request, res: Response) => {
     const { username, email, password, managerId } = req.body;
@@ -9,6 +11,7 @@ export const registerController = async (req: Request, res: Response) => {
         // Check for existing user
         const existingUser = await User.findOne({ $or: [{ email }, { username }] });
         if (existingUser) {
+            logger.info({ email, ...getTraceContext(), }, `Attempt to register existing user with email: ${email}`);
             return res.status(409).json({ error: 'Email or username already exists.' });
         }
         // Use salt and pepper for hashing
@@ -25,8 +28,10 @@ export const registerController = async (req: Request, res: Response) => {
             createdOn: Date.now(),
         });
         await user.save();
+        logger.info(`User registered successfully: ${email}`);
         res.status(201).json({ message: 'User registered successfully' });
     } catch (err) {
+        logger.error(`Error registering user: ${(err as Error).message}`);
         res.status(500).json({ error: (err as Error).message });
     }
 };
@@ -36,6 +41,7 @@ export const loginController = async (req: Request, res: Response) => {
     try {
         const user = await User.findOne({ email }).lean();
         if (!user) {
+            logger.info({ email, ...getTraceContext(), }, `Login attempt with non-existent email: ${email}`);
             return res.status(401).json({ error: 'Invalid email' });
         }
         // Use pepper for password comparison
@@ -43,6 +49,7 @@ export const loginController = async (req: Request, res: Response) => {
         const saltedPassword = password + pepper;
         const isMatch = await bcrypt.compare(saltedPassword, user.password);
         if (!isMatch) {
+            logger.info(`Login attempt with invalid password for email: ${email}`);
             return res.status(401).json({ error: 'Invalid password' });
         }
         // Short-lived access token (e.g., 5m)
@@ -66,6 +73,7 @@ export const loginController = async (req: Request, res: Response) => {
         });
         res.json({ accessToken });
     } catch (err) {
+        logger.error(`Error during login: ${(err as Error).message}`);
         res.status(500).json({ error: (err as Error).message });
     }
 };
@@ -77,6 +85,7 @@ export const getEmployeesController = async (req: Request, res: Response) => {
         const reports = await User.find({ managerId: userId }).lean();
         res.json(reports);
     } catch (err) {
+        logger.error(`Error fetching employees: ${(err as Error).message}`);
         res.status(500).json({ error: (err as Error).message });
     }
 };
@@ -84,6 +93,7 @@ export const getEmployeesController = async (req: Request, res: Response) => {
 export const refreshTokenController = (req: Request, res: Response) => {
     const token = req.cookies?.refreshToken;
     if (!token) {
+        logger.info('Refresh token not provided');
         return res.status(401).json({ error: 'No refresh token provided' });
     }
     try {
@@ -95,7 +105,8 @@ export const refreshTokenController = (req: Request, res: Response) => {
             { expiresIn: '5m' }
         );
         res.json({ accessToken });
-    } catch (err) {
+    } catch (err: any) {
+        logger.error({ error: err?.message }, 'Invalid or expired refresh token');
         res.status(401).json({ error: 'Invalid or expired refresh token' });
     }
 };
@@ -107,6 +118,7 @@ export const updateUserController = async (req: Request, res: Response) => {
     try {
         const user = await User.findOne({ email });
         if (!user) {
+            logger.info(`Attempt to update non-existent user with email: ${email}`);
             return res.status(404).json({ error: 'User not found' });
         }
         if (managerId) {
@@ -118,6 +130,7 @@ export const updateUserController = async (req: Request, res: Response) => {
         await user.save();
         res.json({ message: 'User updated successfully' });
     } catch (err) {
+        logger.error(`Error updating user: ${(err as Error).message}`);
         res.status(500).json({ error: (err as Error).message });
     }
 };

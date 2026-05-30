@@ -1,5 +1,8 @@
+import './tracing';
 import express from 'express';
 import dotenv from 'dotenv';
+import pinoHttp from 'pino-http';
+import { logger } from './logger';
 import connectDB from './db.ts';
 import authRouter from './routes/auth.ts';
 import { serviceRegistry } from './shared-config/serviceRegistry';
@@ -10,7 +13,11 @@ app.use(express.json());
 
 dotenv.config();
 connectDB();
-
+app.use(
+  pinoHttp({
+    logger
+  })
+);
 // Health check endpoint
 app.get('/health', (_req, res) => {
   res.json({ status: 'healthy', service: 'user-service' });
