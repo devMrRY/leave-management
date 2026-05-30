@@ -38,7 +38,7 @@ const publicPrefixes = [
 ];
 
 function maybeVerifyJwt(req, res, next) {
-  if (publicPrefixes.some(prefix => req.path.startsWith(prefix))) return next();
+  if (publicPrefixes.some(prefix => req.path.startsWith(prefix))) return authLimiter(req, res, next);
   return verifyJwtGateway(req, res, next);
 }
 
@@ -103,7 +103,7 @@ const leaveProxy = createProxyMiddleware({
 });
 
 // Single proxy for user service; middleware checks whitelist
-app.use('/api/users', authLimiter, maybeVerifyJwt, userProxy);
+app.use('/api/users', maybeVerifyJwt, userProxy);
 
 // Proxy to leave service (requires auth)
 app.use('/api/leaves', verifyJwtGateway, leaveProxy);
