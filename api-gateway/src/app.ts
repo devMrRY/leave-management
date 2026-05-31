@@ -31,6 +31,19 @@ app.set("trust proxy", 1);
 
 app.use(globalLimiter);
 
+async function startServiceRefresh() {
+  await serviceRegistry.refreshAll();
+
+  setInterval(async () => {
+    try {
+      await serviceRegistry.refreshAll();
+    } catch (err) {
+      console.error('Service Refresh failed:', err);
+    }
+  }, 5000);
+}
+
+startServiceRefresh();
 const publicPrefixes = [
   "/auth",
   "/public",
@@ -51,6 +64,7 @@ const userProxy = createProxyMiddleware({
       await serviceRegistry.discover(
         'user-service'
       );
+      console.log('---------------> Routing to:', url);
     return url || 'http://user-service:3000';
   },
 
@@ -116,6 +130,7 @@ app.use(cookieParser());
 app.get('/health/services', (_req, res) => {
   res.json({
     gateway: 'healthy',
+    instance: process.env.HOSTNAME,
     services: serviceRegistry.getAll().map(s => ({
       name: s.name,
       url: s.url,
@@ -127,4 +142,4 @@ app.get('/health/services', (_req, res) => {
 
 
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => console.log(`API Gateway listening on ${PORT}`));
+app.listen(PORT, '0.0.0.0', () => console.log(`API Gateway listening on ${PORT}`));

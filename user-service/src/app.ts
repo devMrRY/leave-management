@@ -20,7 +20,7 @@ app.use(
 );
 // Health check endpoint
 app.get('/health', (_req, res) => {
-  res.json({ status: 'healthy', service: 'user-service' });
+  res.json({ status: 'healthy', service: 'user-service', instance: process.env.HOSTNAME });
 });
 
 // Auth routes
@@ -31,6 +31,15 @@ app.listen(PORT, '0.0.0.0', () => {
   console.log(`User service running on port ${PORT}`);
 
   // Register this service in the discovery registry
-  const serviceHost = config.services.userService.host || process.env.SERVICE_HOST || `http://localhost`;
+  const serviceHost: string = (process.env.HOSTNAME) as string;
   serviceRegistry.register('user-service', serviceHost, parseInt(PORT as string, 10));
+});
+
+process.on('SIGTERM', async () => {
+  await serviceRegistry.deregister(
+    'user-service',
+    process.env.HOSTNAME!
+  );
+
+  process.exit(0);
 });
