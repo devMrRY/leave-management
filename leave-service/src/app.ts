@@ -1,32 +1,49 @@
+// import './tracing';
 import express from 'express';
 import dotenv from 'dotenv';
-import cookieParser from 'cookie-parser';
-import mongoose from 'mongoose';
-import leaveRouter from './routes/leave.ts';
+import leaveRouter from './routes/leave';
+// import pinoHttp from 'pino-http';
 import { serviceRegistry } from './shared-config/serviceRegistry';
-import { config } from './shared-config/config';
+import connectDB from './db.ts';
+import { startConsumer } from './events/leave.consumer.js';
+// import { logger } from './logger';
+import { attachUserContext } from './middleware/extendReq';
 
 dotenv.config();
 const app = express();
 app.use(express.json());
-app.use(cookieParser());
+app.use(attachUserContext);
 
-const MONGO = process.env.MONGO_URI || 'mongodb://localhost:27017/leave-service';
-mongoose.connect(MONGO).then(()=> console.log('Leave-service DB connected'))
-  .catch(err=> console.error('DB conn error', err));
+async function start() {
+  await connectDB();
+  await startConsumer();
+}
+start();
+// app.use(
+//   pinoHttp({
+//     logger
+//   })
+// );
 
 // Health check endpoint
 app.get('/health', (_req, res) => {
   res.json({ status: 'healthy', service: 'leave-service' });
 });
 
-app.use('/leaves', leaveRouter);
+app.use(leaveRouter);
 
-const PORT = process.env.PORT || 4000;
+const PORT = parseInt(process.env.PORT || '4000', 10);
 app.listen(PORT, () => {
   console.log(`Leave service listening on ${PORT}`);
 
   // Register this service in the discovery registry
-  const serviceHost = config.services.leaveService.host || process.env.SERVICE_HOST || `http://localhost`;
-  serviceRegistry.register('leave-service', serviceHost, parseInt(PORT as string, 10));
+  const serviceHost: string = process.env.HOSTNAME as string;
+  serviceRegistry.register('leave-service', serviceHost, PORT);
+});
+
+process.on('SIGTERM', async () => {
+  await serviceRegistry.deregister(
+    `leave-service-${process.env.HOSTNAME}`);
+
+  process.exit(0);
 });

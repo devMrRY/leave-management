@@ -1,0 +1,20 @@
+{
+  "name": "notification-service",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Notification microservice for event-driven architecture.",
+  "main": "dist/app.js",
+  "scripts": {
+    "start": "node dist/app.js",
+    "dev": "tsx watch src/app.ts",
+    "build": "tsc"
+  },
+  "dependencies": {
+    "amqplib": "^2.0.1"
+  },
+  "devDependencies": {
+    "ts-node": "^10.0.0",
+    "tsx": "^4.22.3",
+    "typescript": "^5.0.0"
+  }
+}

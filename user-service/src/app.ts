@@ -3,16 +3,18 @@ import express from 'express';
 import dotenv from 'dotenv';
 import pinoHttp from 'pino-http';
 import { logger } from './logger';
-import connectDB from './db.ts';
-import authRouter from './routes/auth.ts';
+import connectDB from './db';
+import authRouter from './routes/auth';
 import { serviceRegistry } from './shared-config/serviceRegistry';
-import { config } from './shared-config/config';
+import { attachUserContext } from './middleware/extendReq';
 
 const app = express();
 app.use(express.json());
+app.use(attachUserContext);
 
 dotenv.config();
 connectDB();
+
 app.use(
   pinoHttp({
     logger
@@ -26,20 +28,18 @@ app.get('/health', (_req, res) => {
 // Auth routes
 app.use(authRouter);
 
-const PORT = process.env.PORT || 3000;
+const PORT = parseInt(process.env.PORT || '3000', 10);
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`User service running on port ${PORT}`);
 
   // Register this service in the discovery registry
-  const serviceHost: string = (process.env.HOSTNAME) as string;
-  serviceRegistry.register('user-service', serviceHost, parseInt(PORT as string, 10));
+  const serviceHost: string = process.env.HOSTNAME as string;
+  serviceRegistry.register('user-service', serviceHost, PORT);
 });
 
 process.on('SIGTERM', async () => {
   await serviceRegistry.deregister(
-    'user-service',
-    process.env.HOSTNAME!
-  );
+    `user-service-${process.env.HOSTNAME}`);
 
   process.exit(0);
 });

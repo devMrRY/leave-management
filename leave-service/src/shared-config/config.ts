@@ -59,10 +59,10 @@ function getConfig(): EnvironmentConfig {
       environment: 'docker',
       services: {
         // In Docker, use service names as hostnames (Docker DNS)
-        userService: { name: 'user-service', host: 'http://user-service', port: 3000 },
-        leaveService: { name: 'leave-service', host: 'http://leave-service', port: 4000 },
+        userService: { name: 'user-service', host: 'user-service', port: 3000 },
+        leaveService: { name: 'leave-service', host: 'leave-service', port: 4000 },
         mongo: { name: 'mongo', host: 'mongodb://mongo', port: 27017 },
-        gateway: { name: 'api-gateway', host: 'http://api-gateway', port: 5000 }
+        gateway: { name: 'api-gateway', host: 'api-gateway', port: 5000 }
       }
     },
     production: {

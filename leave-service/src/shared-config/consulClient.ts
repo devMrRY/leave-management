@@ -32,10 +32,23 @@ interface ConsulServiceInstance {
     Status: string;
   }>;
 }
+interface ConsulCatalogServiceInstance {
+  ID: string;
+  Node: string;
+  Address: string;
+  Datacenter: string;
 
+  ServiceID: string;
+  ServiceName: string;
+  ServiceAddress: string;
+  ServicePort: number;
+
+  ServiceTags?: string[];
+  ServiceMeta?: Record<string, string>;
+}
 interface ServiceDiscoveryResult {
   url: string;
-  instances: ConsulServiceInstance[];
+  instances: ConsulCatalogServiceInstance[];
 }
 
 class ConsulClient {
@@ -113,34 +126,26 @@ class ConsulClient {
    */
   async discoverService(serviceName: string): Promise<ServiceDiscoveryResult | null> {
     try {
-      const response = await fetch(`${this.consulUrl}/v1/catalog/service/${serviceName}`);
+      const response = await fetch(`${this.consulUrl}/v1/catalog/service/${serviceName}?passing=true`);
 
       if (!response.ok) {
         throw new Error(`Discovery failed: ${response.statusText}`);
       }
 
-      const instances: ConsulServiceInstance[] = await response.json();
-
-      if (instances.length === 0) {
-        console.warn(`⚠️ No instances found for service: ${serviceName}`);
-        return null;
-      }
-
-      // Get healthy instances (simple filter - in production, check all services' health)
-      const healthyInstances = instances.filter(
-        instance => !instance.Checks || instance.Checks.every((check: any) => check.Status === 'passing')
-      );
+      const healthyInstances: ConsulCatalogServiceInstance[] = await response.json();
 
       if (healthyInstances.length === 0) {
         console.warn(`⚠️ No healthy instances for service: ${serviceName}`);
-        return instances.length > 0 ? { url: this.buildServiceUrl(instances[0]), instances } : null;
+        return null;
       }
 
       // Use first healthy instance (in production, implement load balancing)
-      const instance = healthyInstances[0];
+      const instance = healthyInstances[Math.floor(
+        Math.random() * healthyInstances.length
+      )];
       const url = this.buildServiceUrl(instance);
 
-      return { url, instances: healthyInstances };
+      return { url, instances: [instance] };
     } catch (error) {
       console.warn(`⚠️ Service discovery failed for ${serviceName}:`, (error as Error).message);
       return null;
@@ -148,11 +153,34 @@ class ConsulClient {
   }
 
   /**
+   * Get all service instances (with health) for a service
+   */
+  async getAllServiceInstances(serviceName: string): Promise<ConsulServiceInstance[]> {
+    try {
+      const response = await fetch(`${this.consulUrl}/v1/health/service/${serviceName}`);
+      if (!response.ok) {
+        throw new Error(`Failed to fetch all service instances: ${response.statusText}`);
+      }
+      // Consul returns array of objects with .Service and .Checks
+      const data = await response.json();
+      // Normalize to ConsulServiceInstance[]
+      return data.map((item: any) => ({
+        ID: item.Service.ID,
+        Service: item.Service,
+        Checks: item.Checks
+      }));
+    } catch (error) {
+      console.warn(`⚠️ Failed to get all service instances for ${serviceName}:`, (error as Error).message);
+      return [];
+    }
+  }
+
+  /**
    * Build service URL from Consul instance
    */
-  private buildServiceUrl(instance: ConsulServiceInstance): string {
-    const { Address, Port } = instance.Service;
-    return `http://${Address}:${Port}`;
+  private buildServiceUrl(instance: { ServiceAddress: string; ServicePort: number }): string {
+    const { ServiceAddress, ServicePort } = instance;
+    return `http://${ServiceAddress}:${ServicePort}`;
   }
 
   /**

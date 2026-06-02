@@ -28,6 +28,7 @@ const authLimiter = rateLimit({
 dotenv.config();
 const app = express();
 app.set("trust proxy", 1);
+app.use(cookieParser());
 
 app.use(globalLimiter);
 
@@ -50,7 +51,7 @@ const publicPrefixes = [
   "/health"
 ];
 
-function maybeVerifyJwt(req, res, next) {
+function maybeVerifyJwt(req: express.Request, res: express.Response, next: express.NextFunction) {
   if (publicPrefixes.some(prefix => req.path.startsWith(prefix))) return authLimiter(req, res, next);
   return verifyJwtGateway(req, res, next);
 }
@@ -59,12 +60,12 @@ const userProxy = createProxyMiddleware({
   changeOrigin: true,
   proxyTimeout: 5000,
   timeout: 5000,
+  cookieDomainRewrite: "localhost",
   router: async () => {
     const url =
       await serviceRegistry.discover(
         'user-service'
       );
-      console.log('---------------> Routing to:', url);
     return url || 'http://user-service:3000';
   },
 
@@ -73,11 +74,11 @@ const userProxy = createProxyMiddleware({
   },
 
   onProxyReq: (proxyReq, req) => {
-    console.log(
-      'Proxying:',
-      req.method,
-      req.originalUrl
-    );
+    const user = (req as any).user;
+    if (user) {
+      proxyReq.setHeader("x-user-id", user.userId);
+      proxyReq.setHeader("x-user-role", user.role);
+    }
   },
 
   onError: (err, req, res) => {
@@ -91,7 +92,6 @@ const userProxy = createProxyMiddleware({
       });
     }
   }
-
 });
 
 const leaveProxy = createProxyMiddleware({
@@ -104,8 +104,17 @@ const leaveProxy = createProxyMiddleware({
     return url;
   },
   pathRewrite: { '^/api/leaves': '' },
+  cookieDomainRewrite: "localhost",
   proxyTimeout: 5000,
   timeout: 5000,
+  onProxyReq: (proxyReq, req) => {
+    const user = (req as any).user;
+
+    if (user) {
+      proxyReq.setHeader("x-user-id", user.userId);
+      proxyReq.setHeader("x-user-role", user.role);
+    }
+  },
   onError(err, req, res) {
     console.error("Leave proxy error:", err.message);
     if (!res.headersSent) {
@@ -124,7 +133,6 @@ app.use('/api/leaves', verifyJwtGateway, leaveProxy);
 
 // Only parse JSON and cookies for non-proxied routes (add after proxies)
 app.use(express.json());
-app.use(cookieParser());
 
 // Service discovery status endpoint
 app.get('/health/services', (_req, res) => {
@@ -140,6 +148,5 @@ app.get('/health/services', (_req, res) => {
   });
 });
 
-
-const PORT = process.env.PORT || 5000;
+const PORT = parseInt(process.env.PORT || '5000', 10);
 app.listen(PORT, '0.0.0.0', () => console.log(`API Gateway listening on ${PORT}`));

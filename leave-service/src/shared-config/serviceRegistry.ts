@@ -17,7 +17,6 @@ interface ServiceEntry {
 class ServiceRegistry {
   private services: Map<string, ServiceEntry> = new Map();
   private consulAvailable: boolean = false;
-  private registeredServiceIds: Set<string> = new Set();
 
   constructor() {
     this.initializeConsul();
@@ -44,8 +43,8 @@ class ServiceRegistry {
    * Register a service (with Consul if available, fallback to memory)
    */
   async register(name: string, host: string, port: number): Promise<void> {
-    const url = `${host}:${port}`;
-    const serviceId = `${name}-1`;
+    const url = `http://${host}:${port}`;
+    const serviceId = `${name}-${host}`;
     const healthCheckUrl = `http://${host}:${port}/health`;
 
     // Always store in memory for quick access
@@ -59,45 +58,48 @@ class ServiceRegistry {
     });
 
     // If Consul available, register there too
-    if (this.consulAvailable) {
-      try {
-        const registered = await consulClient.registerService({
-          ID: serviceId,
-          Name: name,
-          Address: host.replace('http://', '').replace('https://', ''),
-          Port: port,
-          Check: {
-            HTTP: healthCheckUrl,
-            Interval: '10s',
-            Timeout: '5s',
-            DeregisterCriticalServiceAfter: '30s'
-          },
-          Tags: ['v1']
-        });
-
-        if (registered) {
-          this.registeredServiceIds.add(serviceId);
-          this.services.get(name)!.source = 'consul';
-          console.log(`✓ Service registered with Consul: ${name}`);
+    (async () => {
+      while (true) {
+        try {
+          const registered = await consulClient.registerService({
+            ID: serviceId,
+            Name: name,
+            Address: host,
+            Port: port,
+            Check: {
+              HTTP: healthCheckUrl,
+              Interval: '10s',
+              Timeout: '5s',
+              DeregisterCriticalServiceAfter: '30s'
+            },
+            Tags: ['v1']
+          });
+  
+          if (registered) {
+            this.services.get(name)!.source = 'consul';
+            console.log(`✓ Service registered with Consul: ${name}`);
+            break;
+          }
+        } catch (error) {
+          console.warn(`⚠️ Consul registration failed for ${name}, using memory storage:`, (error as Error).message);
+          await new Promise(resolve =>
+            setTimeout(resolve, 5000)
+          );
         }
-      } catch (error) {
-        console.warn(`⚠️ Consul registration failed for ${name}, using memory storage:`, (error as Error).message);
       }
-    } else {
-      console.log(`📝 Service registered (memory only): ${name} at ${url}`);
-    }
+    })();
   }
 
   /**
    * Deregister a service from Consul
    */
-  async deregister(name: string): Promise<void> {
-    const serviceId = `${name}-1`;
+  async deregister(id: string): Promise<void> {
+    const serviceId = `${id}`;
 
-    if (this.consulAvailable && this.registeredServiceIds.has(serviceId)) {
+    if (this.consulAvailable && this.services.has(serviceId)) {
       try {
         await consulClient.deregisterService(serviceId);
-        this.registeredServiceIds.delete(serviceId);
+        this.services.delete(serviceId);
         console.log(`✓ Service deregistered from Consul: ${name}`);
       } catch (error) {
         console.error(`✗ Failed to deregister from Consul:`, (error as Error).message);
@@ -114,8 +116,9 @@ class ServiceRegistry {
       try {
         const result = await consulClient.discoverService(name);
         if (result) {
+          const key = `${name}-${result.instances[0]?.ServiceAddress || '1'}`;
           // Update memory cache
-          this.services.set(name, {
+          this.services.set(key, {
             name,
             url: result.url,
             port: parseInt(result.url.split(':').pop() || '0', 10),
@@ -212,6 +215,50 @@ class ServiceRegistry {
       },
       services: this.getAll()
     };
+  }
+
+  /**
+   * Refresh all services: keep healthy, remove/deregister unhealthy
+   */
+  async refreshAll(): Promise<void> {
+    if (!this.consulAvailable) return;
+
+    try {
+      // 1. Get all service names from Consul
+      const allServices = await consulClient.listServices();
+      const serviceNames = Object.keys(allServices);
+
+      // 2. For each service, get all instances (with health)
+      for (const name of serviceNames) {
+        if (name === 'consul') continue;
+        const instances = await consulClient.getAllServiceInstances(name);
+        for (const instance of instances) {
+          const isHealthy = !instance.Checks || instance.Checks.every((check: any) => check.Status === 'passing');
+          const key = instance.Service.ID || '1';
+          
+          if (isHealthy) {
+            this.services.set(key, {
+              name,
+              url: `http://${instance.Service.Address}:${instance.Service.Port}`,
+              port: Number(instance.Service.Port),
+              healthy: true,
+              lastHealthCheck: new Date(),
+              source: 'consul'
+            });
+          } else {
+            this.services.delete(key);
+            // Try to deregister this unhealthy instance (by instance ID if available)
+            try {
+              await this.deregister(key);
+            } catch (err) {
+              console.warn(`Failed to deregister unhealthy instance ${key}:`, (err as Error).message);
+            }
+          }
+        }
+      }
+    } catch (err) {
+      console.error('Error refreshing services from Consul:', (err as Error).message);
+    }
   }
 }
 

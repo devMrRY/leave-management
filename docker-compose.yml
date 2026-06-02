@@ -45,13 +45,55 @@ services:
       - CONSUL_BIND_INTERFACE=eth0
     command: agent -server -ui -bootstrap-expect=1 -client=0.0.0.0
 
+  rabbitmq:
+      image: rabbitmq:3-management
+      container_name: rabbitmq
+      ports:
+        - "5672:5672"    # AMQP
+        - "15672:15672"  # UI dashboard
+      environment:
+        RABBITMQ_DEFAULT_USER: admin
+        RABBITMQ_DEFAULT_PASS: admin
+      healthcheck:
+        test: ["CMD", "rabbitmq-diagnostics", "ping"]
+        interval: 5s
+        timeout: 5s
+        retries: 10
+
+  notification-service:
+    build: ./notification-service
+    env_file: ./notification-service/.env
+    # ports:
+    #   - '7000:7000'
+    expose:
+      - '7000'
+    depends_on:
+      - rabbitmq
+      - consul
+    environment:
+      - DOCKER_ENV=true
+      - CONSUL_HOST=consul
+      - CONSUL_PORT=8500
+      - SERVICE_NAME=notification-service
+    labels:
+      co.elastic.logs/enabled: "true"
+    develop:
+      watch:
+        - action: sync
+          path: ./notification-service
+          target: /app
+          ignore:
+            - node_modules/
+
+        - action: rebuild
+          path: ./notification-service/package.json
   mongo:
     image: mongo:6.0
     restart: unless-stopped
     volumes:
       - mongo-data:/data/db
     ports:
-      - '27017:27017'
+      - '27018:27017'
 
   user-service:
     build: ./user-service
