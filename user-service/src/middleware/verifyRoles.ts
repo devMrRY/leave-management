@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from "express";
-import { UserRole } from "../models/User";
+import { UserRole } from "../models/User.js";
 
 export const authorizeRoles = (allowedRoles: UserRole[]) => {
     return (req: Request & { userId: string; role: UserRole }, res: Response, next: NextFunction) => {

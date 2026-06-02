@@ -63,8 +63,6 @@ services:
   notification-service:
     build: ./notification-service
     env_file: ./notification-service/.env
-    # ports:
-    #   - '7000:7000'
     expose:
       - '7000'
     depends_on:
@@ -98,8 +96,6 @@ services:
   user-service:
     build: ./user-service
     env_file: ./user-service/.env
-    # ports:
-    #   - '3000:3000'
     expose:
       - '3000'
     depends_on:

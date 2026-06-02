@@ -1,23 +1,24 @@
 import mongoose from 'mongoose';
-import { seedUsers } from './seed/initialUserSeed';
+import { seedUsers } from './seed/initialUserSeed.js';
+import { logger } from '@myorg/shared';
 
 export default async function connectDB() {
   const MONGO: string = process.env.MONGO_URI || 'mongodb://localhost:27017/leave-service';
   const maxRetries = 20;
-  console.log(`🔗 Connecting to MongoDB at ${MONGO}...`);
+  logger.info(`🔗 Connecting to MongoDB at ${MONGO}...`);
   for (let i = 1; i <= maxRetries; i++) {
     try {
       await mongoose.connect(MONGO);
 
-      console.log('✅ User DB connected');
+      logger.info('✅ User DB connected');
       seedUsers().then(() => {
-        console.log('✅ User DB seeding complete');
+        logger.info('✅ User DB seeding complete');
       }).catch((err) => {
-        console.error('❌ User DB seeding failed:', err);
+        logger.error({ err }, '❌ User DB seeding failed');
       });
       return;
     } catch (error) {
-      console.error(
+      logger.error(
         `❌ User DB connection failed (attempt ${i}/${maxRetries})`
       );
 

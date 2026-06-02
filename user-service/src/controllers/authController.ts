@@ -2,10 +2,9 @@ import { Request, Response } from 'express';
 import { randomUUID } from "crypto";
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
-import User, { UserRole } from '../models/User';
-import { logger } from '../logger';
-import { getTraceContext } from '../helpers/tracing';
-import { publishUserCreated } from '../events/user.publisher';
+import User, { UserRole } from '../models/User.js';
+import { logger } from '@myorg/shared';
+import { publishUserCreated } from '../events/user.publisher.js';
 
 export const registerController = async (req: Request, res: Response) => {
     const { username, email, password, managerId, role, name } = req.body;
@@ -13,7 +12,7 @@ export const registerController = async (req: Request, res: Response) => {
         // Check for existing user
         const existingUser = await User.findOne({ $or: [{ email }, { username }] });
         if (existingUser) {
-            logger.info({ email, ...getTraceContext(), }, `Attempt to register existing user with email: ${email}`);
+            logger.info({ email }, `Attempt to register existing user with email`);
             return res.status(409).json({ error: 'Email or username already exists.' });
         }
         // Use salt and pepper for hashing
@@ -37,10 +36,10 @@ export const registerController = async (req: Request, res: Response) => {
             role: user.role,
             name: user.name,
         });
-        logger.info(`User registered successfully: ${email}`);
+        logger.info({ email }, `User registered successfully`);
         res.status(201).json({ message: 'User registered successfully' });
     } catch (err) {
-        logger.error(`Error registering user: ${(err as Error).message}`);
+        logger.error({ err }, `Error registering user: ${(err as Error).message}`);
         res.status(500).json({ error: (err as Error).message });
     }
 };
@@ -50,7 +49,7 @@ export const loginController = async (req: Request, res: Response) => {
     try {
         const user = await User.findOne({ email }).lean();
         if (!user) {
-            logger.info({ email, ...getTraceContext(), }, `Login attempt with non-existent email: ${email}`);
+            logger.info({ email }, `Login attempt with non-existent email`);
             return res.status(401).json({ error: 'Invalid email' });
         }
         // Use pepper for password comparison
@@ -58,7 +57,7 @@ export const loginController = async (req: Request, res: Response) => {
         const saltedPassword = password + pepper;
         const isMatch = await bcrypt.compare(saltedPassword, user.password);
         if (!isMatch) {
-            logger.info(`Login attempt with invalid password for email: ${email}`);
+            logger.info({ email }, `Login attempt with invalid password`);
             return res.status(401).json({ error: 'Invalid password' });
         }
         // Short-lived access token (e.g., 5m)
@@ -82,7 +81,7 @@ export const loginController = async (req: Request, res: Response) => {
         });
         res.json({ accessToken });
     } catch (err) {
-        logger.error(`Error during login: ${(err as Error).message}`);
+        logger.error({ err }, 'Error during login');
         res.status(500).json({ error: (err as Error).message });
     }
 };
@@ -110,7 +109,7 @@ export const refreshTokenController = (req: Request, res: Response) => {
         );
         res.json({ accessToken });
     } catch (err: any) {
-        logger.error({ error: err?.message }, 'Invalid or expired refresh token');
+        logger.error({ error: err }, 'Invalid or expired refresh token');
         res.status(401).json({ error: 'Invalid or expired refresh token' });
     }
 };

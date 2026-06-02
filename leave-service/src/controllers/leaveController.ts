@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import * as leaveService from '../services/leaveService.js';
-import { callService } from '../shared-config/httpClient.js';
+import { callService, serviceRegistry, logger } from '@myorg/shared';
 import { publishLeaveApproved, publishLeaveCreated, publishLeaveRejected } from '../events/leave.publisher.js';
 
 interface AuthRequest extends Request {
@@ -41,14 +41,15 @@ export const applyForLeave = async (req: AuthRequest, res: Response) => {
       const userResp = await callService('user-service', `/${encodeURIComponent(employeeId)}`, {
         method: 'GET',
         req,
+        serviceRegistry
       });
       if (userResp.ok) {
         userDetails = await userResp.json();
       } else {
-        console.warn('Failed to fetch user details from user-service', userResp.status);
+        logger.warn('Failed to fetch user details from user-service');
       }
     } catch (err) {
-      console.warn('Error fetching user details from user-service:', (err as Error).message);
+      logger.error({ error: err }, 'Error fetching user details from user-service');
     }
 
     const leave = await leaveService.applyLeave({
@@ -108,16 +109,17 @@ export const getPendingLeaveRequests = async (req: AuthRequest, res: Response) =
           req,
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ employeeIds }),
+          serviceRegistry
         });
 
         if (resp.ok) {
           const users = await resp.json();
           userDetailsMap = new Map(users.map((user: any) => [user.employeeId, user]));
         } else {
-          console.warn('Failed to fetch employee details from user-service', resp.status);
+          logger.warn('Failed to fetch employee details from user-service');
         }
       } catch (err) {
-        console.warn('Error fetching employee details from user-service:', (err as Error).message);
+        logger.error({ error: err }, 'Error fetching employee details from user-service');
       }
     }
 

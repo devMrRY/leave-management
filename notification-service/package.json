@@ -10,7 +10,8 @@
     "build": "tsc"
   },
   "dependencies": {
-    "amqplib": "^2.0.1"
+    "@myorg/shared": "git+https://github.com/devMrRY/leave-management-shared.git",
+    "tsconfig-paths": "^4.2.0"
   },
   "devDependencies": {
     "ts-node": "^10.0.0",

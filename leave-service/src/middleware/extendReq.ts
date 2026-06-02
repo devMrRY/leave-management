@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from "express";
-import { UserRole } from "../models/User";
+import { UserRole } from "../shared/constants";
 
 export const attachUserContext = (
   req: Request & { userId?: string; role?: UserRole },

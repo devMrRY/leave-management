@@ -7,18 +7,14 @@
     "start": "node dist/app.js"
   },
   "dependencies": {
-    "@leave/shared-infra": "file:../packages/shared-config",
-    "@opentelemetry/api": "^1.9.1",
-    "@opentelemetry/auto-instrumentations-node": "^0.76.0",
-    "@opentelemetry/exporter-trace-otlp-http": "^0.218.0",
-    "@opentelemetry/resources": "^2.7.1",
-    "@opentelemetry/sdk-node": "^0.218.0",
+    "@myorg/shared": "git+https://github.com/devMrRY/leave-management-shared.git",
     "cookie-parser": "^1.4.6",
     "dotenv": "^16.0.0",
     "express": "^4.18.0",
     "express-rate-limit": "^8.5.2",
     "http-proxy-middleware": "^2.0.6",
-    "jsonwebtoken": "^9.0.0"
+    "jsonwebtoken": "^9.0.0",
+    "tsconfig-paths": "^4.2.0"
   },
   "devDependencies": {
     "@types/cookie-parser": "^1.4.3",

@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
-import User from '../models/User';
-import { logger } from '../logger';
-import { publishManagerUpdated } from '../events/user.publisher';
+import User from '../models/User.js';
+import { logger } from '@myorg/shared';
+import { publishManagerUpdated } from '../events/user.publisher.js';
 
 export const getEmployeeController = async (req: Request, res: Response) => {
     const userId = (req as any).userId;
@@ -13,12 +13,12 @@ export const getEmployeeController = async (req: Request, res: Response) => {
     try {
         const employee = await User.findOne({ employeeId: empId }).select('-password -_id -__v').lean();
         if (!employee) {
-            logger.info(`Employee not found with ID: ${empId}`);
+            logger.info({ empId }, 'Employee not found');
             return res.status(404).json({ error: 'Employee not found' });
         }
         res.json(employee);
     } catch (err) {
-        logger.error(`Error fetching employee: ${(err as Error).message}`);
+        logger.error({ err }, `Error fetching employee: ${(err as Error).message}`);
         res.status(500).json({ error: (err as Error).message });
     }
 };
@@ -30,7 +30,7 @@ export const updateManagerIdController = async (req: Request, res: Response) => 
     try {
         const user = await User.findOne({ email });
         if (!user) {
-            logger.info(`Attempt to update non-existent user with email: ${email}`);
+            logger.info({ email }, 'Attempt to update non-existent user');
             return res.status(404).json({ error: 'User not found' });
         }
         if (managerId) {
@@ -41,7 +41,7 @@ export const updateManagerIdController = async (req: Request, res: Response) => 
         await publishManagerUpdated({ employeeId: user.employeeId, managerId });
         res.json({ message: 'User updated successfully' });
     } catch (err) {
-        logger.error(`Error updating user: ${(err as Error).message}`);
+        logger.error({ err }, `Error updating user: ${(err as Error).message}`);
         res.status(500).json({ error: (err as Error).message });
     }
 };
@@ -62,7 +62,7 @@ export const getEmployeesController = async (req: Request, res: Response) => {
 
         res.json(employees);
     } catch (err) {
-        logger.error(`Error fetching employees by ids: ${(err as Error).message}`);
+        logger.error({ err }, `Error fetching employees by ids: ${(err as Error).message}`);
         res.status(500).json({ error: (err as Error).message });
     }
 };
@@ -76,12 +76,12 @@ export const deleteUserController = async (req: Request, res: Response) => {
     try {
         const user = await User.findOneAndDelete({ employeeId: empId });
         if (!user) {
-            logger.info(`Attempt to delete non-existent user with employee ID: ${empId}`);
+            logger.info({ empId }, 'Attempt to delete non-existent user');
             return res.status(404).json({ error: 'User not found' });
         }
         res.json({ message: 'User deleted successfully' });
     } catch (err) {
-        logger.error(`Error deleting user: ${(err as Error).message}`);
+        logger.error({ err }, `Error deleting user: ${(err as Error).message}`);
         res.status(500).json({ error: (err as Error).message });
     }
 };

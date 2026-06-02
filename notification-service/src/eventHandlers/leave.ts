@@ -1,15 +1,17 @@
+import { logger } from '@myorg/shared';
+
 export const handleLeaveCreated = async (event: any) => {
   const { employeeId, email, name, managerId, startDate, endDate } = event;
 
-  console.log(`New leave request is created with ${name}, ${managerId}, and ${email}`);
+  logger.info({ employeeId, email, name, managerId, startDate, endDate }, 'New leave request is created');
 };
 
 export const handleLeaveApproved = async (event: any) => {
   const { employeeId, email, name, leaveType, startDate, endDate } = event;
-  console.log(`Leave request approved for ${name}, ${leaveType}, from ${startDate} to ${endDate}`);
+  logger.info({ employeeId, email, name, leaveType, startDate, endDate }, 'Leave request approved');
 };
 
 export const handleLeaveRejected = async (event: any) => {
   const { employeeId, email, name, leaveType, startDate, endDate, reason } = event;
-  console.log(`Leave request rejected for ${name}, ${leaveType}, from ${startDate} to ${endDate}. Reason: ${reason}`);
+  logger.info({ employeeId, email, name, leaveType, startDate, endDate, reason }, 'Leave request rejected');
 };

@@ -1,12 +1,11 @@
-// import './tracing';
+import './tracing.js';
 import express from 'express';
 import dotenv from 'dotenv';
 import leaveRouter from './routes/leave';
-// import pinoHttp from 'pino-http';
-import { serviceRegistry } from './shared-config/serviceRegistry';
+import pinoHttp from 'pino-http';
 import connectDB from './db.ts';
 import { startConsumer } from './events/leave.consumer.js';
-// import { logger } from './logger';
+import { logger, serviceRegistry } from '@myorg/shared';
 import { attachUserContext } from './middleware/extendReq';
 
 dotenv.config();
@@ -19,11 +18,7 @@ async function start() {
   await startConsumer();
 }
 start();
-// app.use(
-//   pinoHttp({
-//     logger
-//   })
-// );
+app.use(pinoHttp({ logger }));
 
 // Health check endpoint
 app.get('/health', (_req, res) => {

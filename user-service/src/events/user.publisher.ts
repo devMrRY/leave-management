@@ -1,4 +1,4 @@
-import { publish } from "../shared-config/rabbitMQ/publish";
+import { publish } from "@myorg/shared";
 
 export const publishUserCreated = async (user: {
     employeeId: string;

@@ -4,7 +4,7 @@ import dotenv from 'dotenv';
 import cookieParser from 'cookie-parser';
 import { createProxyMiddleware } from 'http-proxy-middleware';
 import { verifyJwtGateway } from './middleware/verifyJwt.ts';
-import { serviceRegistry } from './shared-config/serviceRegistry';
+import { serviceRegistry, logger } from '@myorg/shared';
 import rateLimit from "express-rate-limit";
 
 const globalLimiter = rateLimit({
@@ -38,8 +38,8 @@ async function startServiceRefresh() {
   setInterval(async () => {
     try {
       await serviceRegistry.refreshAll();
-    } catch (err) {
-      console.error('Service Refresh failed:', err);
+    } catch (err: any) {
+      logger.error({error: err?.message}, 'Service Refresh failed:');
     }
   }, 5000);
 }
@@ -81,11 +81,8 @@ const userProxy = createProxyMiddleware({
     }
   },
 
-  onError: (err, req, res) => {
-    console.error(
-      'Proxy error:',
-      err
-    );
+  onError: (err: any, req: express.Request, res: express.Response) => {
+    logger.error({error: err?.message}, 'Proxy error:');
     if (!res.headersSent) {
       res.status(502).json({
         error: err.message || "User service unavailable"
@@ -115,8 +112,8 @@ const leaveProxy = createProxyMiddleware({
       proxyReq.setHeader("x-user-role", user.role);
     }
   },
-  onError(err, req, res) {
-    console.error("Leave proxy error:", err.message);
+  onError(err: any, req: express.Request, res: express.Response) {
+    logger.error({error: err?.message}, "Leave proxy error:");
     if (!res.headersSent) {
       res.status(502).json({
         error: err.message || "Leave service unavailable"

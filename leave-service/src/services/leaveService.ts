@@ -1,7 +1,7 @@
 import Leave, { ILeave } from '../models/Leave.js';
 import LeaveBalance, { ILeaveBalance } from '../models/LeaveBalance.js';
 import { DefaultLeaveAllocation, LeaveStatus, LeaveType } from '../models/constants.js';
-import { calculateWorkingDays, hasWeekends } from '../utils/dateUtils.js';
+import { calculateWorkingDays } from '../utils/dateUtils.js';
 
 /**
  * Get or create leave balance for an employee for a specific year

@@ -1,4 +1,4 @@
-import { connectConsumer, createConsumer } from "../shared-config/rabbitMQ/consumer";// shared consumer
+import { connectConsumer, createConsumer } from "@myorg/shared";
 import { handlePopulateUserLeaveBalance, handleUpdateManager } from "../eventHandlers/populateLeaveBalance";
 
 export const startConsumer = async () => {

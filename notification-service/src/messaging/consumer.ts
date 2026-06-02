@@ -1,4 +1,4 @@
-import { connectConsumer, createConsumer } from "../rabbitMQ/consumer";// shared consumer
+import { connectConsumer, createConsumer } from "@myorg/shared";// shared consumer
 import { handleUserCreated } from "../eventHandlers/user";
 import { handleLeaveApproved, handleLeaveCreated, handleLeaveRejected } from "../eventHandlers/leave";
 
