@@ -1,13 +1,21 @@
 import { Request, Response, NextFunction } from "express";
 import { UserRole } from "../shared/constants";
+import { requestContext } from "../utils/request-context";
 
 export const attachUserContext = (
   req: Request & { userId?: string; role?: UserRole },
-  res: Response,
+  _res: Response,
   next: NextFunction
 ) => {
   req.userId = req.header("x-user-id") || undefined;
   req.role = req.header("x-user-role") as UserRole | undefined;
 
-  next();
+  requestContext.run(
+    {
+      userId: req.userId,
+      role: req.role,
+      authorization: req.headers.authorization,
+    },
+    () => next()
+  );
 };

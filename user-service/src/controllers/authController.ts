@@ -64,7 +64,7 @@ export const loginController = async (req: Request, res: Response) => {
         const accessToken = jwt.sign(
             { userId: user.employeeId, role: user.role },
             process.env.JWT_SECRET || 'secret',
-            { expiresIn: '5m' }
+            { expiresIn: '15m' }
         );
         // Long-lived refresh token (e.g., 7d)
         const refreshToken = jwt.sign(
@@ -105,7 +105,7 @@ export const refreshTokenController = (req: Request, res: Response) => {
         const accessToken = jwt.sign(
             { userId: payload.userId, role: payload.role },
             process.env.JWT_SECRET || 'secret',
-            { expiresIn: '5m' }
+            { expiresIn: '15m' }
         );
         res.json({ accessToken });
     } catch (err: any) {

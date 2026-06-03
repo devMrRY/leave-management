@@ -1,7 +1,8 @@
 import { Request, Response } from 'express';
-import * as leaveService from '../services/leaveService.js';
-import { callService, serviceRegistry, logger } from '@myorg/shared';
+import * as leaveService from '../models/repository/leave.js';
+import { logger } from '@myorg/shared';
 import { publishLeaveApproved, publishLeaveCreated, publishLeaveRejected } from '../events/leave.publisher.js';
+import { getEmployeeDetail, getEmployeeDetails } from '../services/userService.js';
 
 interface AuthRequest extends Request {
   userId?: string;
@@ -20,6 +21,7 @@ export const getLeaveBalance = async (req: AuthRequest, res: Response) => {
     const balances = await leaveService.getLeaveBalanceByYear(employeeId, currentYear);
     res.json({ year: currentYear, balances });
   } catch (err) {
+    logger.error({ error: (err as Error).message }, 'Error fetching leave balance');
     res.status(500).json({ error: (err as Error).message });
   }
 };
@@ -36,21 +38,7 @@ export const applyForLeave = async (req: AuthRequest, res: Response) => {
 
     const start = new Date(startDate);
     const end = new Date(endDate);
-    let userDetails = null;
-    try {
-      const userResp = await callService('user-service', `/${encodeURIComponent(employeeId)}`, {
-        method: 'GET',
-        req,
-        serviceRegistry
-      });
-      if (userResp.ok) {
-        userDetails = await userResp.json();
-      } else {
-        logger.warn('Failed to fetch user details from user-service');
-      }
-    } catch (err) {
-      logger.error({ error: err }, 'Error fetching user details from user-service');
-    }
+    const userDetails = await getEmployeeDetail(employeeId);
 
     const leave = await leaveService.applyLeave({
       employeeId,
@@ -76,6 +64,7 @@ export const applyForLeave = async (req: AuthRequest, res: Response) => {
 
     res.status(201).json(leave);
   } catch (err) {
+    logger.error({ error: (err as Error).message }, 'Error applying for leave');
     res.status(500).json({ error: (err as Error).message });
   }
 };
@@ -86,7 +75,6 @@ export const applyForLeave = async (req: AuthRequest, res: Response) => {
 export const getPendingLeaveRequests = async (req: AuthRequest, res: Response) => {
   const managerId = req.userId;
   if (!managerId) return res.status(401).json({ error: 'Unauthorized' });
-
   try {
     const { status, employeeId, startDate, type, endDate, page = 1, limit = 10 } = req.query as any;
     const filter: any = {
@@ -103,24 +91,8 @@ export const getPendingLeaveRequests = async (req: AuthRequest, res: Response) =
     let userDetailsMap = new Map<string, any>();
 
     if (employeeIds.length > 0) {
-      try {
-        const resp = await callService('user-service', '/employees', {
-          method: 'POST',
-          req,
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ employeeIds }),
-          serviceRegistry
-        });
-
-        if (resp.ok) {
-          const users = await resp.json();
-          userDetailsMap = new Map(users.map((user: any) => [user.employeeId, user]));
-        } else {
-          logger.warn('Failed to fetch employee details from user-service');
-        }
-      } catch (err) {
-        logger.error({ error: err }, 'Error fetching employee details from user-service');
-      }
+      const users = await getEmployeeDetails(employeeIds);
+      userDetailsMap = new Map(users.map((user: any) => [user.employeeId, user]));
     }
 
     const leavesWithDetails = result.leaves.map((leave) => {
@@ -130,9 +102,10 @@ export const getPendingLeaveRequests = async (req: AuthRequest, res: Response) =
         employeeDetails: userDetailsMap.get(String(leave.employeeId)) || null,
       };
     });
-
-    res.json({ ...result, leaves: leavesWithDetails });
+    logger.info({leavesWithDetails: JSON.stringify(leavesWithDetails)}, 'final response sending from getPendingLeaveRequests');
+    res.json(leavesWithDetails);
   } catch (err) {
+    logger.error({ error: (err as Error).message }, 'Error fetching pending leave requests');
     res.status(500).json({ error: (err as Error).message });
   }
 };
@@ -162,6 +135,7 @@ export const approveLeave = async (req: AuthRequest, res: Response) => {
 
     res.json(leave);
   } catch (err) {
+    logger.error({ error: (err as Error).message }, 'Error approving leave request');
     res.status(500).json({ error: (err as Error).message });
   }
 };
@@ -190,6 +164,7 @@ export const rejectLeave = async (req: AuthRequest, res: Response) => {
     });
     res.json(leave);
   } catch (err) {
+    logger.error({ error: (err as Error).message }, 'Error rejecting leave request');
     res.status(500).json({ error: (err as Error).message });
   }
 };
@@ -206,6 +181,7 @@ export const cancelLeave = async (req: AuthRequest, res: Response) => {
     const leave = await leaveService.cancelLeaveRequest(leaveId, employeeId);
     res.json(leave);
   } catch (err) {
+    logger.error({ error: (err as Error).message }, 'Error canceling leave request');
     res.status(500).json({ error: (err as Error).message });
   }
 };
@@ -232,6 +208,7 @@ export const getLeaveHistory = async (req: AuthRequest, res: Response) => {
     const leaves = await leaveService.getLeaveRequests(filter, page, limit);
     res.json(leaves);
   } catch (err) {
+    logger.error({ error: (err as Error).message }, 'Error fetching leave history');
     res.status(500).json({ error: (err as Error).message });
   }
 };

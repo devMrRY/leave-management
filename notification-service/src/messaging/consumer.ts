@@ -1,6 +1,9 @@
-import { connectConsumer, createConsumer } from "@myorg/shared";// shared consumer
+import { connectConsumer, createConsumer } from "@myorg/shared"; // shared consumer
+import { trace, SpanStatusCode } from '@opentelemetry/api';
 import { handleUserCreated } from "../eventHandlers/user";
 import { handleLeaveApproved, handleLeaveCreated, handleLeaveRejected } from "../eventHandlers/leave";
+
+const tracer = trace.getTracer('notification-service');
 
 export const startConsumer = async () => {
     const ch = await connectConsumer();
@@ -9,7 +12,21 @@ export const startConsumer = async () => {
         exchange: "user.exchange",
         queue: "notification.user.queue",
         routingKey: "user.created",
-        handler: handleUserCreated
+        handler: async (data) => {
+            await tracer.startActiveSpan('process.user.created', async (span) => {
+                span.setAttribute('messaging.system', 'rabbitmq');
+                span.setAttribute('messaging.destination', 'user.exchange');
+                span.setAttribute('messaging.rabbitmq.routing_key', 'user.created');
+                try {
+                    await handleUserCreated(data);
+                    span.setStatus({ code: SpanStatusCode.OK });
+                } catch (err) {
+                    span.recordException(err as Error);
+                    span.setStatus({ code: SpanStatusCode.ERROR, message: (err as Error)?.message });
+                    throw err;
+                }
+            });
+        }
     });
 
     await createConsumer({
@@ -17,15 +34,43 @@ export const startConsumer = async () => {
         exchange: "leave.exchange",
         queue: "notification.leave.queue",
         routingKey: "leave.approved",
-        handler: handleLeaveApproved
+        handler: async (data) => {
+            await tracer.startActiveSpan('process.leave.approved', async (span) => {
+                span.setAttribute('messaging.system', 'rabbitmq');
+                span.setAttribute('messaging.destination', 'leave.exchange');
+                span.setAttribute('messaging.rabbitmq.routing_key', 'leave.approved');
+                try {
+                    await handleLeaveApproved(data);
+                    span.setStatus({ code: SpanStatusCode.OK });
+                } catch (err) {
+                    span.recordException(err as Error);
+                    span.setStatus({ code: SpanStatusCode.ERROR, message: (err as Error)?.message });
+                    throw err;
+                }
+            });
+        }
     });
 
-     await createConsumer({
+    await createConsumer({
         channel: ch,
         exchange: "leave.exchange",
         queue: "notification.leave.queue",
         routingKey: "leave.rejected",
-        handler: handleLeaveRejected
+        handler: async (data) => {
+            await tracer.startActiveSpan('process.leave.rejected', async (span) => {
+                span.setAttribute('messaging.system', 'rabbitmq');
+                span.setAttribute('messaging.destination', 'leave.exchange');
+                span.setAttribute('messaging.rabbitmq.routing_key', 'leave.rejected');
+                try {
+                    await handleLeaveRejected(data);
+                    span.setStatus({ code: SpanStatusCode.OK });
+                } catch (err) {
+                    span.recordException(err as Error);
+                    span.setStatus({ code: SpanStatusCode.ERROR, message: (err as Error)?.message });
+                    throw err;
+                }
+            });
+        }
     });
 
     await createConsumer({
@@ -33,7 +78,21 @@ export const startConsumer = async () => {
         exchange: "leave.exchange",
         queue: "notification.leave.queue",
         routingKey: "leave.created",
-        handler: handleLeaveCreated
+        handler: async (data) => {
+            await tracer.startActiveSpan('process.leave.created', async (span) => {
+                span.setAttribute('messaging.system', 'rabbitmq');
+                span.setAttribute('messaging.destination', 'leave.exchange');
+                span.setAttribute('messaging.rabbitmq.routing_key', 'leave.created');
+                try {
+                    await handleLeaveCreated(data);
+                    span.setStatus({ code: SpanStatusCode.OK });
+                } catch (err) {
+                    span.recordException(err as Error);
+                    span.setStatus({ code: SpanStatusCode.ERROR, message: (err as Error)?.message });
+                    throw err;
+                }
+            });
+        }
     });
 };
 

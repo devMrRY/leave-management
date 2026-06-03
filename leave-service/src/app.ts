@@ -7,9 +7,12 @@ import connectDB from './db.ts';
 import { startConsumer } from './events/leave.consumer.js';
 import { logger, serviceRegistry } from '@myorg/shared';
 import { attachUserContext } from './middleware/extendReq';
+import { handleCrash } from './utils/errorHandler.ts';
 
 dotenv.config();
 const app = express();
+process.on("uncaughtException", handleCrash);
+process.on("unhandledRejection", handleCrash);
 app.use(express.json());
 app.use(attachUserContext);
 

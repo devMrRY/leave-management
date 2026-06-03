@@ -16,12 +16,14 @@
     "joi": "^17.11.0",
     "jsonwebtoken": "^9.0.0",
     "mongoose": "^7.0.0",
+    "opossum": "^9.0.0",
     "pino-http": "^11.0.0",
     "tsconfig-paths": "^4.2.0"
   },
   "devDependencies": {
     "@types/express": "~5.0.6",
     "@types/jsonwebtoken": "~9.0.10",
+    "@types/opossum": "^8.1.9",
     "tsx": "^4.22.3",
     "typescript": "^5.9.3"
   }

@@ -7,8 +7,11 @@ import authRouter from './routes/auth.js';
 import userRouter from './routes/user.js';
 import { logger, serviceRegistry } from '@myorg/shared';
 import { attachUserContext } from './middleware/extendReq.js';
+import { handleCrash } from './utils/errorHandler.js';
 
 const app = express();
+process.on("uncaughtException", handleCrash);
+process.on("unhandledRejection", handleCrash);
 app.use(express.json());
 app.use(attachUserContext);
 

@@ -6,6 +6,7 @@ import { createProxyMiddleware } from 'http-proxy-middleware';
 import { verifyJwtGateway } from './middleware/verifyJwt.ts';
 import { serviceRegistry, logger } from '@myorg/shared';
 import rateLimit from "express-rate-limit";
+import { handleCrash } from './utils.ts/errorHandler.ts';
 
 const globalLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
@@ -27,6 +28,10 @@ const authLimiter = rateLimit({
 
 dotenv.config();
 const app = express();
+
+process.on("uncaughtException", handleCrash);
+process.on("unhandledRejection", handleCrash);
+
 app.set("trust proxy", 1);
 app.use(cookieParser());
 
@@ -39,7 +44,7 @@ async function startServiceRefresh() {
     try {
       await serviceRegistry.refreshAll();
     } catch (err: any) {
-      logger.error({error: err?.message}, 'Service Refresh failed:');
+      logger.error({ error: err?.message }, 'Service Refresh failed:');
     }
   }, 5000);
 }
@@ -66,13 +71,16 @@ const userProxy = createProxyMiddleware({
       await serviceRegistry.discover(
         'user-service'
       );
-    return url || 'http://user-service:3000';
+    if (!url) {
+      throw new Error(
+        'No healthy user-service instance found'
+      );
+    }
+    return url;
   },
-
   pathRewrite: {
     '^/api/users': ''
   },
-
   onProxyReq: (proxyReq, req) => {
     const user = (req as any).user;
     if (user) {
@@ -80,9 +88,8 @@ const userProxy = createProxyMiddleware({
       proxyReq.setHeader("x-user-role", user.role);
     }
   },
-
   onError: (err: any, req: express.Request, res: express.Response) => {
-    logger.error({error: err?.message}, 'Proxy error:');
+    logger.error({ error: err?.message }, `Proxy error: ${err?.message}`);
     if (!res.headersSent) {
       res.status(502).json({
         error: err.message || "User service unavailable"
@@ -94,9 +101,13 @@ const userProxy = createProxyMiddleware({
 const leaveProxy = createProxyMiddleware({
   changeOrigin: true,
   router: async () => {
-    const url =
-      await serviceRegistry.discover('leave-service')
-      || 'http://localhost:4000';
+    const url = await serviceRegistry.discover('leave-service');
+
+    if (!url) {
+      throw new Error(
+        'No healthy leave-service instance found'
+      );
+    }
 
     return url;
   },
@@ -113,7 +124,7 @@ const leaveProxy = createProxyMiddleware({
     }
   },
   onError(err: any, req: express.Request, res: express.Response) {
-    logger.error({error: err?.message}, "Leave proxy error:");
+    logger.error({ error: err?.message }, `Leave proxy error: ${err?.message}`);
     if (!res.headersSent) {
       res.status(502).json({
         error: err.message || "Leave service unavailable"

@@ -59,7 +59,6 @@ export const getEmployeesController = async (req: Request, res: Response) => {
         const employees = await User.find(filter)
             .select('employeeId managerId username name email role -_id')
             .lean();
-
         res.json(employees);
     } catch (err) {
         logger.error({ err }, `Error fetching employees by ids: ${(err as Error).message}`);
