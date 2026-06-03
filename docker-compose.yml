@@ -52,8 +52,8 @@ services:
         - "5672:5672"    # AMQP
         - "15672:15672"  # UI dashboard
       environment:
-        RABBITMQ_DEFAULT_USER: admin
-        RABBITMQ_DEFAULT_PASS: admin
+        RABBITMQ_DEFAULT_USER: ${RABBITMQ_DEFAULT_USER}
+        RABBITMQ_DEFAULT_PASS: ${RABBITMQ_DEFAULT_PASS}
       healthcheck:
         test: ["CMD", "rabbitmq-diagnostics", "ping"]
         interval: 5s
@@ -70,8 +70,8 @@ services:
       - consul
     environment:
       - DOCKER_ENV=true
-      - CONSUL_HOST=consul
-      - CONSUL_PORT=8500
+      - CONSUL_HOST=${CONSUL_HOST}
+      - CONSUL_PORT=${CONSUL_PORT}
       - SERVICE_NAME=notification-service
     labels:
       co.elastic.logs/enabled: "true"
@@ -104,8 +104,8 @@ services:
       - jaeger
     environment:
       - DOCKER_ENV=true
-      - CONSUL_HOST=consul
-      - CONSUL_PORT=8500
+      - CONSUL_HOST=${CONSUL_HOST}
+      - CONSUL_PORT=${CONSUL_PORT}
       - SERVICE_NAME=user-service
     labels:
       co.elastic.logs/enabled: "true"
@@ -123,16 +123,14 @@ services:
   leave-service:
     build: ./leave-service
     env_file: ./leave-service/.env
-    # ports:
-    #   - '4000:4000'
     expose:
       - '4000'
     depends_on:
       - consul
     environment:
       - DOCKER_ENV=true
-      - CONSUL_HOST=consul
-      - CONSUL_PORT=8500
+      - CONSUL_HOST=${CONSUL_HOST}
+      - CONSUL_PORT=${CONSUL_PORT}
       - SERVICE_NAME=leave-service
     labels:
       co.elastic.logs/enabled: "true"
@@ -168,7 +166,7 @@ services:
     ports:
       - "5601:5601"
     environment:
-      ELASTICSEARCH_HOSTS: http://elasticsearch:9200
+      ELASTICSEARCH_HOSTS: ${ELASTICSEARCH_HOSTS}
     depends_on:
       - elasticsearch
 
