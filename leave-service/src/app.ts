@@ -1,16 +1,16 @@
-import "./utils/loadEnvConfig.ts";
+import "./utils/loadEnvConfig.js";
 import "./tracing.js";
 import express from "express";
 import "express-async-errors";
 import leaveRouter from "./routes/leave";
 import pinoHttp from "pino-http";
-import connectDB from "./db.ts";
+import connectDB from "./db.js";
 import { startConsumer } from "./events/leave.consumer.js";
 import { logger, serviceRegistry } from "@myorg/shared";
-import { handleCrash } from "./utils/errorHandler.ts";
-import { globalErrorHandler } from "./middleware/globalErrorHandler.ts";
+import { handleCrash } from "./utils/errorHandler.js";
+import { globalErrorHandler } from "./middleware/globalErrorHandler.js";
 import { randomUUID } from "crypto";
-import { startServiceRefresh } from "./bootstrap/service-refresh";
+import { startServiceRefresh } from "./bootstrap/service-refresh.js";
 
 const app = express();
 process.on("uncaughtException", handleCrash);
