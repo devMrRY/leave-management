@@ -1,5 +1,4 @@
-import { logger } from '@myorg/shared';
-
+import { logger } from '@myorg/shared/src/logger';
 export const handleLeaveCreated = async (event: any) => {
   const { employeeId, email, name, managerId, startDate, endDate } = event;
 

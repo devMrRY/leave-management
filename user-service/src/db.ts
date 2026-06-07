@@ -1,26 +1,28 @@
-import mongoose from 'mongoose';
-import { seedUsers } from './seed/initialUserSeed.js';
-import { logger } from '@myorg/shared';
+import mongoose from "mongoose";
+import { seedUsers } from "./seed/initialUserSeed.js";
+import { logger } from "@myorg/shared";
 
 export default async function connectDB() {
-  const MONGO: string = process.env.MONGO_URI || 'mongodb://localhost:27017/leave-service';
+  const { MONGO_HOST, MONGO_PORT, SERVICE_NAME } = process.env;
+  const MONGO_URI: string = `mongodb://${MONGO_HOST}:${MONGO_PORT}/${SERVICE_NAME}`;
+
   const maxRetries = 20;
-  logger.info(`🔗 Connecting to MongoDB at ${MONGO}...`);
+  logger.info(`🔗 Connecting to MongoDB at ${MONGO_URI}...`);
   for (let i = 1; i <= maxRetries; i++) {
     try {
-      await mongoose.connect(MONGO);
+      await mongoose.connect(MONGO_URI);
 
-      logger.info('✅ User DB connected');
-      seedUsers().then(() => {
-        logger.info('✅ User DB seeding complete');
-      }).catch((err) => {
-        logger.error({ err }, '❌ User DB seeding failed');
-      });
-      return;
+      logger.info("✅ User DB connected");
+      seedUsers()
+        .then(() => {
+          logger.info("✅ User DB seeding complete");
+        })
+        .catch((err) => {
+          logger.error({ err }, "❌ User DB seeding failed");
+        });
+      break;
     } catch (error) {
-      logger.error(
-        `❌ User DB connection failed (attempt ${i}/${maxRetries})`
-      );
+      logger.error(`❌ User DB connection failed (attempt ${i}/${maxRetries})`);
 
       if (i === maxRetries) {
         throw error;

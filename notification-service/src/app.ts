@@ -1,3 +1,4 @@
+import './utils/loadEnvConfig.js'
 import './tracing.js';
 import { startConsumer } from "./messaging/consumer";
 import { handleCrash } from './utils/errorHandler.js';

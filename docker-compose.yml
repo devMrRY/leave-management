@@ -15,6 +15,7 @@ services:
       - '5000'
     depends_on:
       - consul
+    restart: unless-stopped
     environment:
       - DOCKER_ENV=true
       - CONSUL_HOST=consul
@@ -68,11 +69,13 @@ services:
     depends_on:
       - rabbitmq
       - consul
+    restart: unless-stopped
     environment:
       - DOCKER_ENV=true
       - CONSUL_HOST=${CONSUL_HOST}
       - CONSUL_PORT=${CONSUL_PORT}
       - SERVICE_NAME=notification-service
+      - RABBITMQ_HOST=rabbitmq
     labels:
       co.elastic.logs/enabled: "true"
     develop:
@@ -102,11 +105,16 @@ services:
       - consul
       - mongo
       - jaeger
+      - rabbitmq
+    restart: unless-stopped
     environment:
       - DOCKER_ENV=true
-      - CONSUL_HOST=${CONSUL_HOST}
+      - CONSUL_HOST=consul
       - CONSUL_PORT=${CONSUL_PORT}
       - SERVICE_NAME=user-service
+      - MONGO_HOST=mongo
+      - RABBITMQ_HOST=rabbitmq
+
     labels:
       co.elastic.logs/enabled: "true"
     develop:
@@ -127,11 +135,14 @@ services:
       - '4000'
     depends_on:
       - consul
+      - rabbitmq
+      - mongo
+    restart: unless-stopped
     environment:
       - DOCKER_ENV=true
-      - CONSUL_HOST=${CONSUL_HOST}
-      - CONSUL_PORT=${CONSUL_PORT}
-      - SERVICE_NAME=leave-service
+      - CONSUL_HOST=consul
+      - MONGO_HOST=mongo
+      - RABBITMQ_HOST=rabbitmq
     labels:
       co.elastic.logs/enabled: "true"
     develop:

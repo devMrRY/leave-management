@@ -6,11 +6,12 @@
   "main": "dist/app.js",
   "scripts": {
     "start": "node dist/app.js",
-    "dev": "tsx watch src/app.ts",
+    "dev": "tsx src/app.ts",
     "build": "tsc"
   },
   "dependencies": {
     "@myorg/shared": "git+https://github.com/devMrRY/leave-management-shared.git",
+    "dotenv": "^17.4.2",
     "tsconfig-paths": "^4.2.0"
   },
   "devDependencies": {

@@ -1,0 +1,49 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Attach API Gateway",
+      "type": "node",
+      "request": "attach",
+      "address": "localhost",
+      "port": 9229,
+      "restart": true,
+      "localRoot": "${workspaceFolder}/api-gateway",
+      "remoteRoot": "/app",
+      "skipFiles": ["<node_internals>/**"]
+    },
+    {
+      "name": "Attach User Service",
+      "type": "node",
+      "request": "attach",
+      "address": "localhost",
+      "port": 9230,
+      "restart": true,
+      "localRoot": "${workspaceFolder}/user-service",
+      "remoteRoot": "/app",
+      "skipFiles": ["<node_internals>/**"]
+    },
+    {
+      "name": "Attach Leave Service",
+      "type": "node",
+      "request": "attach",
+      "address": "localhost",
+      "port": 9231,
+      "restart": true,
+      "localRoot": "${workspaceFolder}/leave-service",
+      "remoteRoot": "/app",
+      "skipFiles": ["<node_internals>/**"]
+    },
+    {
+      "name": "Attach Notification Service",
+      "type": "node",
+      "request": "attach",
+      "address": "localhost",
+      "port": 9232,
+      "restart": true,
+      "localRoot": "${workspaceFolder}/notification-service",
+      "remoteRoot": "/app",
+      "skipFiles": ["<node_internals>/**"]
+    }
+  ]
+}

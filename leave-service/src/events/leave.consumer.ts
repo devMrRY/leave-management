@@ -1,8 +1,8 @@
-import { connectConsumer, createConsumer } from "@myorg/shared";
+import { connectChannel, createConsumer } from "@myorg/shared";
 import { handlePopulateUserLeaveBalance, handleUpdateManager } from "../eventHandlers/populateLeaveBalance";
 
 export const startConsumer = async () => {
-    const ch = await connectConsumer();
+    const ch = await connectChannel();
     await createConsumer({
         channel: ch,
         exchange: "user.exchange",
@@ -19,5 +19,3 @@ export const startConsumer = async () => {
         handler: handleUpdateManager,
     });
 };
-
-startConsumer();

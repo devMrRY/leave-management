@@ -1,15 +1,18 @@
-import './tracing.js';
-import express from 'express';
-import dotenv from 'dotenv';
-import leaveRouter from './routes/leave';
-import pinoHttp from 'pino-http';
-import connectDB from './db.ts';
-import { startConsumer } from './events/leave.consumer.js';
-import { logger, serviceRegistry } from '@myorg/shared';
-import { attachUserContext } from './middleware/extendReq';
-import { handleCrash } from './utils/errorHandler.ts';
+import "./utils/loadEnvConfig.ts";
+import "./tracing.js";
+import express from "express";
+import "express-async-errors";
+import leaveRouter from "./routes/leave";
+import pinoHttp from "pino-http";
+import connectDB from "./db.ts";
+import { startConsumer } from "./events/leave.consumer.js";
+import { logger, serviceRegistry } from "@myorg/shared";
+import { attachUserContext } from "./middleware/extendReq";
+import { handleCrash } from "./utils/errorHandler.ts";
+import { globalErrorHandler } from "./middleware/globalErrorHandler.ts";
+import { randomUUID } from "crypto";
+import { startServiceRefresh } from "./bootstrap/service-refresh";
 
-dotenv.config();
 const app = express();
 process.on("uncaughtException", handleCrash);
 process.on("unhandledRejection", handleCrash);
@@ -17,31 +20,34 @@ app.use(express.json());
 app.use(attachUserContext);
 
 async function start() {
-  await connectDB();
-  await startConsumer();
+  app.use(pinoHttp({ logger }));
+
+  connectDB();
+  startConsumer();
+
+  // Health check endpoint
+  app.get("/health", (_req, res) => {
+    res.json({ status: "healthy", service: "leave-service" });
+  });
+
+  app.use(leaveRouter);
+  app.use(globalErrorHandler);
+
+  const PORT = parseInt(process.env.PORT || "4000", 10);
+  startServiceRefresh(5000);
+  app.listen(PORT, "0.0.0.0", () => {
+    console.log(`Leave service listening on ${PORT}`);
+    // Register this service in the discovery registry
+    const serviceHost: string = randomUUID() as string;
+    serviceRegistry.register("leave-service", serviceHost, PORT);
+  });
+
+  process.on("SIGTERM", async () => {
+    await serviceRegistry.deregister(
+      "leave-service",
+      `leave-service-${process.env.HOSTNAME}`,
+    );
+    process.exit(0);
+  });
 }
 start();
-app.use(pinoHttp({ logger }));
-
-// Health check endpoint
-app.get('/health', (_req, res) => {
-  res.json({ status: 'healthy', service: 'leave-service' });
-});
-
-app.use(leaveRouter);
-
-const PORT = parseInt(process.env.PORT || '4000', 10);
-app.listen(PORT, () => {
-  console.log(`Leave service listening on ${PORT}`);
-
-  // Register this service in the discovery registry
-  const serviceHost: string = process.env.HOSTNAME as string;
-  serviceRegistry.register('leave-service', serviceHost, PORT);
-});
-
-process.on('SIGTERM', async () => {
-  await serviceRegistry.deregister(
-    `leave-service-${process.env.HOSTNAME}`);
-
-  process.exit(0);
-});

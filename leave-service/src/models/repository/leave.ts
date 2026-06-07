@@ -170,7 +170,7 @@ export async function approveLeaveRequest(
       leaveType: leave.type,
     },
     {
-      $inc: { used: leave.numberOfDays },
+      // $inc: { used: leave.numberOfDays },
     },
     { new: true }
   );
@@ -179,7 +179,7 @@ export async function approveLeaveRequest(
   leave.status = LeaveStatus.APPROVED;
   leave.reviewedAt = new Date();
   if (comment) leave.reviewComment = comment;
-  await leave.save();
+  // await leave.save();
 
   return leave;
 }

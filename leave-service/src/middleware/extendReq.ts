@@ -7,7 +7,7 @@ export const attachUserContext = (
   _res: Response,
   next: NextFunction
 ) => {
-  req.userId = req.header("x-user-id") || undefined;
+  req.userId = req.header("x-user-id");
   req.role = req.header("x-user-role") as UserRole | undefined;
 
   requestContext.run(
