@@ -35,14 +35,8 @@ export function createServiceProxy({
       }
     },
 
-    onError: (err: any, req: any, res: any) => {
-      logger.error({ error: err?.message }, `${serviceName} proxy error`);
-
-      if (!res.headersSent) {
-        res.status(502).json({
-          error: err.message || `${serviceName} unavailable`,
-        });
-      }
+    onError: (err: any, req: any, res: any, next: any) => {
+      next(err);
     },
   });
 }

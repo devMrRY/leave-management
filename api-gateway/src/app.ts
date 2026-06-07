@@ -1,5 +1,6 @@
 import "./tracing";
 import express from "express";
+import "express-async-errors";
 import dotenv from "dotenv";
 import cookieParser from "cookie-parser";
 
@@ -12,6 +13,7 @@ import { leaveProxy } from "./proxy/leaveProxy";
 import { serviceRegistry } from "@myorg/shared";
 import { handleCrash } from "./utils.ts/errorHandler";
 import { startServiceRefresh } from "./bootstrap/service-refresh";
+import { globalErrorHandler } from "./middleware/globalErrorHandler.js";
 
 dotenv.config();
 const app = express();
@@ -34,6 +36,7 @@ app.get("/health/services", (_req, res) => {
     services: serviceRegistry.getAll(),
   });
 });
+app.use(globalErrorHandler);
 
 async function start() {
   await startServiceRefresh(5000);
