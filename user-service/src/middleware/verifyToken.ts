@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
-import { verifyToken as jwtVerify } from '../utils/tokenUtils';
+import { verifyToken as jwtVerify } from '../utils/tokenUtils.js';
 interface JwtPayload { userId: string; role: string }
 
 export function verifyToken(req: Request, res: Response, next: NextFunction) {

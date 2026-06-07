@@ -1,5 +1,6 @@
 import mongoose from "mongoose";
 import { logger } from "@myorg/shared";
+import { AppError } from "./utils/customError";
 
 export default async function connectDB() {
   const { MONGO_HOST, MONGO_PORT, SERVICE_NAME } = process.env;
@@ -18,7 +19,14 @@ export default async function connectDB() {
       );
 
       if (i === maxRetries) {
-        throw error;
+        logger.error(
+          { err: error },
+          "🚨 Max retries reached. Could not connect to the database.",
+        );
+        throw new AppError(
+          500,
+          "Failed to connect to the database after multiple attempts",
+        );
       }
 
       await new Promise((resolve) => setTimeout(resolve, 3000));

@@ -1,16 +1,23 @@
-import Leave, { ILeave } from '../Leave.js';
-import LeaveBalance, { ILeaveBalance } from '../LeaveBalance.js';
-import { DefaultLeaveAllocation, LeaveStatus, LeaveType } from '../constants.js';
-import { calculateWorkingDays } from '../../utils/dateUtils.js';
+import Leave, { ILeave } from "../Leave.js";
+import LeaveBalance, { ILeaveBalance } from "../LeaveBalance.js";
+import {
+  DefaultLeaveAllocation,
+  LeaveStatus,
+  LeaveType,
+} from "../constants.js";
+import { calculateWorkingDays } from "../../utils/dateUtils.js";
+import { AppError } from "../../utils/customError.js";
 
 /**
  * Get or create leave balance for an employee for a specific year
  */
 export async function getLeaveBalanceByYear(
   employeeId: string,
-  year: number
+  year: number,
 ): Promise<any[]> {
-  let balances = await LeaveBalance.find({ employeeId, year });
+  let balances = await LeaveBalance.find({ employeeId, year })
+    .select("employeeId leaveType allocated carriedForward used")
+    .lean();
 
   // If no balances exist, create default ones for all leave types
   if (balances.length === 0) {
@@ -18,7 +25,7 @@ export async function getLeaveBalanceByYear(
     const defaultAllocation = (type: LeaveType) =>
       DefaultLeaveAllocation[type as keyof typeof DefaultLeaveAllocation] ?? 0;
 
-    const newBalances = leaveTypes.map(type => ({
+    const newBalances = leaveTypes.map((type) => ({
       employeeId,
       year,
       leaveType: type,
@@ -27,11 +34,22 @@ export async function getLeaveBalanceByYear(
       used: 0,
     }));
 
-    balances = await LeaveBalance.insertMany(newBalances);
+    balances = (await LeaveBalance.insertMany(newBalances)) as any[];
   }
 
   // Convert to objects with virtuals included
-  return balances.map(balance => balance.toObject({ virtuals: true }));
+  const result = balances.map((balance) =>
+    balance.toObject({ virtuals: true }),
+  );
+
+  return result.map((balance) => ({
+    employeeId: balance.employeeId,
+    leaveType: balance.leaveType,
+    allocated: balance.allocated,
+    carriedForward: balance.carriedForward,
+    used: balance.used,
+    remaining: balance.allocated + balance.carriedForward - balance.used,
+  }));
 }
 
 /**
@@ -57,17 +75,20 @@ export async function applyLeave(data: {
   });
 
   if (overlapping) {
-    throw new Error('Leave request overlaps with an existing request');
+    throw new AppError(400, "Leave request overlaps with an existing request");
   }
 
   // Calculate working days (excluding weekends)
   const { workingDays, weekendDays, skippedDates } = calculateWorkingDays(
     data.startDate,
-    data.endDate
+    data.endDate,
   );
 
   if (workingDays === 0) {
-    throw new Error('Leave period contains only weekends. Please select different dates.');
+    throw new AppError(
+      400,
+      "Leave period contains only weekends. Please select different dates.",
+    );
   }
 
   // Check leave balance
@@ -84,8 +105,9 @@ export async function applyLeave(data: {
     : 0;
 
   if (!balance || remainingDays < workingDays) {
-    throw new Error(
-      `Insufficient leave balance. Required: ${workingDays} days, Available: ${remainingDays} days`
+    throw new AppError(
+      400,
+      `Insufficient leave balance. Required: ${workingDays} days, Available: ${remainingDays} days`,
     );
   }
 
@@ -115,7 +137,7 @@ export async function applyLeave(data: {
 export async function getLeaveRequests(
   filter: any,
   page: number = 1,
-  limit: number = 10
+  limit: number = 10,
 ): Promise<{ leaves: ILeave[]; total: number; page: number; limit: number }> {
   const skip = (page - 1) * limit;
   const { managerId, status, employeeId, startDate, endDate, type } = filter;
@@ -126,14 +148,12 @@ export async function getLeaveRequests(
   if (type) query.type = type;
   if (startDate || endDate) {
     query.$and = [];
-    if (startDate) query.$and.push({ startDate: { $gte: new Date(startDate) } });
+    if (startDate)
+      query.$and.push({ startDate: { $gte: new Date(startDate) } });
     if (endDate) query.$and.push({ endDate: { $lte: new Date(endDate) } });
   }
   const [leaves, total] = await Promise.all([
-    Leave.find(query)
-      .sort({ createdAt: -1 })
-      .skip(skip)
-      .limit(limit),
+    Leave.find(query).sort({ createdAt: -1 }).skip(skip).limit(limit),
     Leave.countDocuments(query),
   ]);
 
@@ -146,19 +166,19 @@ export async function getLeaveRequests(
 export async function approveLeaveRequest(
   leaveId: string,
   managerId: string,
-  comment?: string
+  comment?: string,
 ): Promise<ILeave> {
   const leave = await Leave.findById(leaveId);
   if (!leave) {
-    throw new Error('Leave request not found');
+    throw new AppError(404, "Leave request not found");
   }
 
   if (leave.status !== LeaveStatus.PENDING) {
-    throw new Error('Only pending leave requests can be approved');
+    throw new AppError(400, "Only pending leave requests can be approved");
   }
 
   if (leave.reportingManager && leave.reportingManager !== managerId) {
-    throw new Error('Unauthorized: You are not the reporting manager');
+    throw new AppError(403, "Unauthorized: You are not the reporting manager");
   }
 
   // Deduct from leave balance
@@ -170,16 +190,16 @@ export async function approveLeaveRequest(
       leaveType: leave.type,
     },
     {
-      // $inc: { used: leave.numberOfDays },
+      $inc: { used: leave.numberOfDays },
     },
-    { new: true }
+    { new: true },
   );
 
   // Update leave status
   leave.status = LeaveStatus.APPROVED;
   leave.reviewedAt = new Date();
   if (comment) leave.reviewComment = comment;
-  // await leave.save();
+  await leave.save();
 
   return leave;
 }
@@ -190,19 +210,19 @@ export async function approveLeaveRequest(
 export async function rejectLeaveRequest(
   leaveId: string,
   managerId: string,
-  comment: string
+  comment: string,
 ): Promise<ILeave> {
   const leave = await Leave.findById(leaveId);
   if (!leave) {
-    throw new Error('Leave request not found');
+    throw new AppError(404, "Leave request not found");
   }
 
   if (leave.status !== LeaveStatus.PENDING) {
-    throw new Error('Only pending leave requests can be rejected');
+    throw new AppError(400, "Only pending leave requests can be rejected");
   }
 
   if (leave.reportingManager && leave.reportingManager !== managerId) {
-    throw new Error('Unauthorized: You are not the reporting manager');
+    throw new AppError(403, "Unauthorized: You are not the reporting manager");
   }
 
   leave.status = LeaveStatus.REJECTED;
@@ -215,30 +235,36 @@ export async function rejectLeaveRequest(
 
 export async function cancelLeaveRequest(
   leaveId: string,
-  employeeId: string
+  employeeId: string,
 ): Promise<ILeave> {
   const leave = await Leave.findById(leaveId);
   if (!leave) {
-    throw new Error('Leave request not found');
+    throw new AppError(404, "Leave request not found");
   }
 
   if (leave.employeeId !== employeeId) {
-    throw new Error('Unauthorized: You can only cancel your own leave requests');
+    throw new AppError(
+      403,
+      "Unauthorized: You can only cancel your own leave requests",
+    );
   }
 
   if (leave.status !== LeaveStatus.PENDING) {
-    throw new Error('Only pending leave requests can be cancelled');
+    throw new AppError(400, "Only pending leave requests can be cancelled");
   }
 
   leave.status = LeaveStatus.CANCELLED;
   leave.reviewedAt = new Date();
-  leave.reviewComment = 'Cancelled by employee';
+  leave.reviewComment = "Cancelled by employee";
   await leave.save();
 
   return leave;
 }
 
-export async function setDefaultLeaveAllocation(employeeId: string, year: number): Promise<ILeaveBalance[]> {
+export async function setDefaultLeaveAllocation(
+  employeeId: string,
+  year: number,
+): Promise<ILeaveBalance[]> {
   let balances = await LeaveBalance.find({ employeeId });
 
   // If no balances exist, create default ones for all leave types
@@ -247,7 +273,7 @@ export async function setDefaultLeaveAllocation(employeeId: string, year: number
     const defaultAllocation = (type: LeaveType) =>
       DefaultLeaveAllocation[type as keyof typeof DefaultLeaveAllocation] ?? 0;
 
-    const newBalances = leaveTypes.map(type => ({
+    const newBalances = leaveTypes.map((type) => ({
       employeeId,
       year,
       leaveType: type,
@@ -261,6 +287,12 @@ export async function setDefaultLeaveAllocation(employeeId: string, year: number
   return balances;
 }
 
-export async function updateManagerInLeaves(employeeId: string, managerId: string): Promise<void> {
-  await Leave.updateMany({ employeeId, status: LeaveStatus.PENDING }, { reportingManager: managerId });
+export async function updateManagerInLeaves(
+  employeeId: string,
+  managerId: string,
+): Promise<void> {
+  await Leave.updateMany(
+    { employeeId, status: LeaveStatus.PENDING },
+    { reportingManager: managerId },
+  );
 }

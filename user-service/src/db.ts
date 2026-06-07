@@ -1,6 +1,7 @@
 import mongoose from "mongoose";
 import { seedUsers } from "./seed/initialUserSeed.js";
 import { logger } from "@myorg/shared";
+import { AppError } from "./utils/customError.js";
 
 export default async function connectDB() {
   const { MONGO_HOST, MONGO_PORT, SERVICE_NAME } = process.env;
@@ -25,7 +26,14 @@ export default async function connectDB() {
       logger.error(`❌ User DB connection failed (attempt ${i}/${maxRetries})`);
 
       if (i === maxRetries) {
-        throw error;
+        logger.error(
+          { err: error },
+          "🚨 Max retries reached. Could not connect to the database.",
+        );
+        throw new AppError(
+          500,
+          "Failed to connect to the database after multiple attempts",
+        );
       }
 
       await new Promise((resolve) => setTimeout(resolve, 3000));

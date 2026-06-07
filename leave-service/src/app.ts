@@ -41,10 +41,7 @@ async function start() {
   });
 
   process.on("SIGTERM", async () => {
-    await serviceRegistry.deregister(
-      "leave-service",
-      `leave-service-${process.env.HOSTNAME}`,
-    );
+    await serviceRegistry.deregister("leave-service");
     process.exit(0);
   });
 }

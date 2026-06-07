@@ -12,7 +12,7 @@ import { logger, serviceRegistry } from "@myorg/shared";
 // Gateway supplies user context via headers; we no longer attach from headers here
 import { globalErrorHandler } from "./middleware/globalErrorHandler.js";
 import { handleCrash } from "./utils/errorHandler.js";
-import { startServiceRefresh } from "./bootstrap/service-refresh";
+import { startServiceRefresh } from "./bootstrap/service-refresh.js";
 
 const app = express();
 process.on("uncaughtException", handleCrash);
@@ -51,10 +51,7 @@ async function start() {
 start();
 
 process.on("SIGTERM", async () => {
-  await serviceRegistry.deregister(
-    "user-service",
-    `user-service-${process.env.HOSTNAME}`,
-  );
+  await serviceRegistry.deregister("user-service");
 
   process.exit(0);
 });

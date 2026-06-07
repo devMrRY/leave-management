@@ -38,8 +38,7 @@ The system consists of the following services:
 ---
 
 ## Architecture Diagram
-
-https://app.eraser.io/workspace/ju17lRNul3L2M9g5M5GC?origin=share&diagram=SzlK77k3F5N8tKXn7oHX
+![Leave Management Architecture](./docs/architecture/leave-managment-architecture.png)
 
 ---
 

@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from "express";
 import { logger } from "@myorg/shared";
+import { AppError } from "../utils/customError.js";
 
 export const globalErrorHandler = (
   err: Error,
@@ -15,6 +16,12 @@ export const globalErrorHandler = (
     },
     err.message || "Request failed",
   );
+
+  if (err instanceof AppError) {
+    return res.status(err.statusCode).json({
+      error: err.message,
+    });
+  }
 
   res.status(500).json({
     success: false,

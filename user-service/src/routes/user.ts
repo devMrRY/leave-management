@@ -12,7 +12,7 @@ import {
 } from "../controllers/userController.js";
 import { authorizeRoles } from "../middleware/verifyRoles.js";
 import { UserRole } from "../models/User.js";
-import { verifyToken } from "src/middleware/verifyToken.js";
+import { verifyToken } from "../middleware/verifyToken.js";
 
 const router = express.Router();
 
