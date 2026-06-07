@@ -32,6 +32,7 @@ export function createServiceProxy({
       if (user) {
         proxyReq.setHeader("x-user-id", user.userId);
         proxyReq.setHeader("x-user-role", user.role);
+        proxyReq.setHeader("internal-api-key", process.env.INTERNAL_API_KEY || "");
       }
     },
 

@@ -9,7 +9,7 @@ import connectDB from "./db.js";
 import authRouter from "./routes/auth.js";
 import userRouter from "./routes/user.js";
 import { logger, serviceRegistry } from "@myorg/shared";
-import { attachUserContext } from "./middleware/extendReq.js";
+// Gateway supplies user context via headers; we no longer attach from headers here
 import { globalErrorHandler } from "./middleware/globalErrorHandler.js";
 import { handleCrash } from "./utils/errorHandler.js";
 import { startServiceRefresh } from "./bootstrap/service-refresh";
@@ -18,7 +18,6 @@ const app = express();
 process.on("uncaughtException", handleCrash);
 process.on("unhandledRejection", handleCrash);
 app.use(express.json());
-app.use(attachUserContext);
 
 dotenv.config();
 connectDB();

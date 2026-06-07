@@ -57,6 +57,7 @@ const LeaveBalanceSchema: Schema = new Schema(
   },
   {
     timestamps: true,
+    versionKey: false,
   }
 );
 

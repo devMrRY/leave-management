@@ -12,6 +12,7 @@ export interface IUser extends Document {
   email: string;
   password: string;
   role: UserRole;
+  isDeleted?: boolean;
   managerId?: String | null; // null for higher management
 }
 
@@ -22,8 +23,9 @@ const UserSchema: Schema = new Schema<IUser>({
   email: { type: String, required: true, unique: true },
   password: { type: String, required: true }, // will be stored as hash
   role: { type: String, enum: Object.values(UserRole), default: UserRole.EMPLOYEE },
+  isDeleted: { type: Boolean, default: false },
   managerId: { type: String, default: null }, // null for higher management
-}, { timestamps: true });
+}, { timestamps: true, versionKey: false });
 
 UserSchema.index({ email: 1 }, { unique: true });
 UserSchema.index({ username: 1 }, { unique: true });

@@ -42,7 +42,7 @@ export const applyForLeave = async (req: AuthRequest, res: Response) => {
 
   const start = new Date(startDate);
   const end = new Date(endDate);
-  const userDetails = await getEmployeeDetail(employeeId);
+  const userDetails = await getEmployeeDetail();
 
   const leave = await leaveService.applyLeave({
     employeeId,

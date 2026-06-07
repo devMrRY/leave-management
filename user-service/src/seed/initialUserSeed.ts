@@ -1,15 +1,14 @@
+import { logger } from "@myorg/shared";
 import User from "../models/User.js";
-import bcrypt from "bcryptjs";
+import { hashPassword } from "../utils/authUtils.js";
 
 // Stable seed IDs
 const MANAGER_ID = "11111111-1111-1111-1111-111111111111";
 const EMPLOYEE_ID = "22222222-2222-2222-2222-222222222222";
 
 export const seedUsers = async () => {
-  const saltRounds = 10;
-  const pepper = process.env.PEPPER || '';
-  const managerPassword = await bcrypt.hash("manager123" + pepper, saltRounds);
-  const employeePassword = await bcrypt.hash("employee123" + pepper, saltRounds);
+  const managerPassword = await hashPassword("manager123");
+  const employeePassword = await hashPassword("employee123");
 
   const seedData = [
     {
@@ -40,5 +39,5 @@ export const seedUsers = async () => {
     )
   );
 
-  console.log("🌱 Seed complete: MANAGER + EMPLOYEE with passwords");
+  logger.info("🌱 Seed complete: MANAGER + EMPLOYEE with passwords");
 };

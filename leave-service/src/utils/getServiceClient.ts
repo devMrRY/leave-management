@@ -1,7 +1,12 @@
 import { HttpClient } from "@myorg/shared";
 import { getBaseUrl } from "../shared/config";
 import { getRequestContext } from "./request-context";
-import { getCircuitBreaker, RequestOptions } from "./getCircuitBreaker";
+import { getCircuitBreaker } from "./getCircuitBreaker";
+
+export interface RequestOptions extends RequestInit {
+  method: string;
+  path: string;
+}
 
 const clientCache = new Map<string, HttpClient>();
 
@@ -13,7 +18,7 @@ export async function getServiceClient(service: string) {
 
       if (!client) {
         const baseUrl = await getBaseUrl(service);
-
+        
         client = new HttpClient({
           baseUrl,
           getRequestContext,
@@ -21,7 +26,17 @@ export async function getServiceClient(service: string) {
 
         clientCache.set(service, client);
       }
+      console.log(getRequestContext(), `Making request to ${service}: ${options.method} ${options.path}`);
       return client!.request(options.method, options.path, options);
+    },
+    // fallback: return a standardized 503-like response object
+    async (_options: RequestOptions) => {
+      return {
+        ok: false,
+        status: 503,
+        statusText: "Service Unavailable",
+        json: async () => ({ error: "Service Unavailable" }),
+      } as any;
     },
   );
 
@@ -35,7 +50,7 @@ export async function getServiceClient(service: string) {
         path,
         ...options,
         headers: { ...options?.headers, "content-type": "application/json" },
-        body: JSON.stringify(body),
+        body: body ? JSON.stringify(body) : body,
       }),
 
     put: (path: string, body?: any, options?: RequestOptions) =>
@@ -44,7 +59,7 @@ export async function getServiceClient(service: string) {
         path,
         ...options,
         headers: { ...options?.headers, "content-type": "application/json" },
-        body: JSON.stringify(body),
+        body: body ? JSON.stringify(body) : body,
       }),
 
     patch: (path: string, body?: any, options?: RequestOptions) =>
@@ -53,7 +68,7 @@ export async function getServiceClient(service: string) {
         path,
         ...options,
         headers: { ...options?.headers, "content-type": "application/json" },
-        body: JSON.stringify(body),
+        body: body ? JSON.stringify(body) : body,
       }),
 
     delete: (path: string, options?: RequestOptions) =>

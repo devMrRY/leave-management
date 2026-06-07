@@ -88,7 +88,7 @@ const LeaveSchema: Schema = new Schema({
     type: String,
     trim: true,
   },
-}, { timestamps: true });
+}, { timestamps: true, versionKey: false });
 
 LeaveSchema.index({ employeeId: 1 });
 LeaveSchema.index({ status: 1 });

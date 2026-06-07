@@ -18,23 +18,27 @@ import {
   leaveRequestsQuerySchema,
 } from '../schemas/leaveSchemas';
 import { UserRole } from '../shared/constants.js';
+import { verifyToken } from '../middleware/verifyToken.js';
 
 const router = express.Router();
 
 // Employee endpoints
 router.get(
   '/balance',
+  verifyToken,
   getLeaveBalance
 );
 
 router.post(
   '/apply',
+  verifyToken,
   validateBody(applyLeaveSchema),
   applyForLeave
 );
 
 router.get(
   '/history',
+  verifyToken,
   validateQuery(leaveRequestsQuerySchema),
   getLeaveHistory
 );
@@ -42,6 +46,7 @@ router.get(
 // Manager endpoints
 router.get(
   '/requests/pending',
+  verifyToken,
   authorizeRoles([UserRole.MANAGER]) as RequestHandler,
   validateQuery(leaveRequestsQuerySchema),
   getPendingLeaveRequests
@@ -49,6 +54,7 @@ router.get(
 
 router.patch(
   '/:leaveId/approve',
+  verifyToken,
   authorizeRoles([UserRole.MANAGER]) as RequestHandler,
   validateParams(leaveIdParamSchema),
   validateBody(approveLeaveSchema),
@@ -57,6 +63,7 @@ router.patch(
 
 router.patch(
   '/:leaveId/reject',
+  verifyToken,
   authorizeRoles([UserRole.MANAGER]) as RequestHandler,
   validateParams(leaveIdParamSchema),
   validateBody(rejectLeaveSchema),
@@ -65,6 +72,7 @@ router.patch(
 
 router.patch(
   '/:leaveId/cancel',
+  verifyToken,
   validateParams(leaveIdParamSchema),
   cancelLeave
 );

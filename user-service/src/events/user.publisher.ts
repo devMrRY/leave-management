@@ -1,4 +1,10 @@
-import { publish } from "@myorg/shared";
+import { publish, getCircuitBreaker } from "@myorg/shared";
+
+const userPublishAction = async (exchange: string, routingKey: string, payload: any) => {
+  return publish(exchange, routingKey, payload);
+}
+
+const userBreaker = getCircuitBreaker("user.exchange", userPublishAction);
 
 export const publishUserCreated = async (user: {
   employeeId: string;
@@ -6,12 +12,12 @@ export const publishUserCreated = async (user: {
   role: string;
   name?: string;
 }) => {
-  return publish("user.exchange", "user.created", user);
+  return userBreaker.fire("user.exchange", "user.created", user);
 };
 
 export const publishManagerUpdated = async (user: {
   employeeId: string;
   managerId: string;
 }) => {
-  return publish("user.exchange", "user.managerUpdated", user);
+  return userBreaker.fire("user.exchange", "user.managerUpdated", user);
 };
