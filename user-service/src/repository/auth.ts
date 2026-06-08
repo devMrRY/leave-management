@@ -27,7 +27,7 @@ export const findByEmployeeId = async (
   employeeId: string,
 ): Promise<UserLean | null> => {
   const user = await User.findOne({ employeeId, isDeleted: false })
-    .select("-password -_id")
+    .select("-password -_id -isDeleted")
     .lean();
   return user as UserLean | null;
 };
@@ -46,7 +46,7 @@ export const updateByEmail = async ({
     { managerId: newManagerId },
     { new: true },
   )
-    .select("-password -_id")
+    .select("-password -_id -isDeleted")
     .lean();
   return user as UserLean | null;
 };

@@ -52,7 +52,12 @@ export const getEmployeesController = async (req: Request, res: Response) => {
       { userId, employeeIds },
       "No employees found for the given IDs under this manager",
     );
-    return res.status(200).json({ employees: [], message: "No employees found" });
+    return res
+      .status(200)
+      .json({
+        employees: [],
+        message: `No employees found ${employeeIds.length > 0 ? 'for the given IDs' : ''} under this manager`,
+      });
   }
   res.json({
     employees: employees.map((e: any) => ({

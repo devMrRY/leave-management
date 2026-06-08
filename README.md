@@ -37,6 +37,30 @@ The system consists of the following services:
 
 ---
 
+## Service Roles
+
+Each service in this repository has a specific role. Start services via `docker compose` (recommended) or run individual services for local development.
+
+- `api-gateway`: HTTP entrypoint, request routing, authentication forwarding, and proxy to backend services.
+- `user-service`: manages users, authentication, and emits `UserCreated` events.
+- `leave-service`: manages leave requests, balances, approvals, and consumes user events.
+- `notification-service`: subscribes to events and sends/stores notifications.
+
+---
+
+## Resilience & Cross-cutting Features
+
+This system includes several production-oriented features used across services:
+
+- **Service Discovery (Consul):** Services register and discover peers via Consul for internal HTTP calls.
+- **Circuit Breaker:** RPCs and RabbitMQ publishers are wrapped with a circuit-breaker to protect downstream services and provide fallbacks when necessary.
+- **Rate Limiting:** Auth and public endpoints are protected by rate limit middleware to mitigate abuse.
+- **Messaging (RabbitMQ):** Asynchronous workflows use RabbitMQ for event delivery (e.g., `UserCreated` → `leave-service`).
+- **Distributed Tracing:** OpenTelemetry + Jaeger propagate traces across HTTP and RabbitMQ flows.
+- **Logging & Observability:** `pino` structured logs are shipped via Filebeat → Elasticsearch and visualized in Kibana.
+
+Configuration for these features is provided via each service's `.env` file and the root `docker-compose.yml`.
+
 ## Architecture Diagram
 ![Leave Management Architecture](./docs/architecture/leave-managment-architecture.png)
 
