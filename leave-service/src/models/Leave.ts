@@ -1,5 +1,5 @@
 import mongoose, { Document, Schema } from 'mongoose';
-import { LeaveStatus, LeaveType } from './constants';
+import { LeaveStatus, LeaveType } from './constants.js';
 
 export interface ILeave extends Document {
   employeeId: string;

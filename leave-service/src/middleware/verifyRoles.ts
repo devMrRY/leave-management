@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from "express";
-import { UserRole } from "../shared/constants";
+import { UserRole } from "../shared/constants.js";
 
 export const authorizeRoles = (allowedRoles: UserRole[]) => {
   return (

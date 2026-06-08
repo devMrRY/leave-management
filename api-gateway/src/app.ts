@@ -1,18 +1,18 @@
-import "./tracing";
+import "./tracing.js";
 import express from "express";
 import "express-async-errors";
 import dotenv from "dotenv";
 import cookieParser from "cookie-parser";
 
-import { globalLimiter } from "./middleware/rateLimit";
-import { maybeVerifyJwt } from "./middleware/auth";
+import { globalLimiter } from "./middleware/rateLimit.js";
+import { maybeVerifyJwt } from "./middleware/auth.js";
 
-import { userProxy } from "./proxy/userProxy";
-import { leaveProxy } from "./proxy/leaveProxy";
+import { userProxy } from "./proxy/userProxy.js";
+import { leaveProxy } from "./proxy/leaveProxy.js";
 
 import { serviceRegistry } from "@myorg/shared";
-import { handleCrash } from "./utils.ts/errorHandler";
-import { startServiceRefresh } from "./bootstrap/service-refresh";
+import { handleCrash } from "./utils.ts/errorHandler.js";
+import { startServiceRefresh } from "./bootstrap/service-refresh.js";
 import { globalErrorHandler } from "./middleware/globalErrorHandler.js";
 
 dotenv.config();

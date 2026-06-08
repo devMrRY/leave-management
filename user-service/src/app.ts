@@ -22,7 +22,9 @@ app.use(express.json());
 dotenv.config();
 connectDB();
 
-app.use(pinoHttp({ logger }));
+// pino-http may export as a CJS default; support both ESM default and namespace imports
+const _pinoHttp: any = (pinoHttp as any)?.default ?? pinoHttp;
+app.use(_pinoHttp({ logger }));
 // Health check endpoint
 app.get("/health", (_req, res) => {
   res.json({

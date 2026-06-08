@@ -3,12 +3,12 @@ import {
   createConsumer,
   runInConsumerSpan,
 } from "@myorg/shared";
-import { handleUserCreated } from "../eventHandlers/user";
+import { handleUserCreated } from "../eventHandlers/user.js";
 import {
   handleLeaveApproved,
   handleLeaveCreated,
   handleLeaveRejected,
-} from "../eventHandlers/leave";
+} from "../eventHandlers/leave.js";
 
 export const startConsumer = async () => {
   const ch = await connectChannel();

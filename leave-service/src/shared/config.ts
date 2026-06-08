@@ -1,5 +1,5 @@
 import { logger, serviceRegistry } from "@myorg/shared";
-import { AppError } from "../utils/customError";
+import { AppError } from "../utils/customError.js";
 
 export const getBaseUrl = async (serviceName: string): Promise<string> => {
     const url = await serviceRegistry.discover(serviceName);

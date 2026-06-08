@@ -1,22 +1,15 @@
-# Use official Node.js LTS image
 FROM node:18-alpine
 
-# Set working directory
 WORKDIR /app
 
-# Copy package.json and package-lock.json
-COPY package.json package-lock.json ./
-
-# Install dependencies
+# Copy package.json and install deps
+COPY package*.json ./
 RUN npm ci
 
-# Copy the rest of the source code
+# Copy source and build
 COPY . .
+RUN npm run build
 
-ENV NODE_ENV=development
-
-# Expose port (change if your service uses a different port)
+ENV NODE_ENV=production
 EXPOSE 7000
-
-# Start the service
-CMD ["npm", "run", "dev"]
+CMD ["npm", "start"]

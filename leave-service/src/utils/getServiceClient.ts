@@ -1,7 +1,7 @@
 import { HttpClient } from "@myorg/shared";
-import { getBaseUrl } from "../shared/config";
-import { getRequestContext } from "./request-context";
-import { getCircuitBreaker } from "./getCircuitBreaker";
+import { getBaseUrl } from "../shared/config.js";
+import { getRequestContext } from "./request-context.js";
+import { getCircuitBreaker } from "./getCircuitBreaker.js";
 
 export interface RequestOptions extends RequestInit {
   method: string;

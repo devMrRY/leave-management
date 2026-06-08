@@ -1,6 +1,6 @@
 import mongoose from "mongoose";
 import { logger } from "@myorg/shared";
-import { AppError } from "./utils/customError";
+import { AppError } from "./utils/customError.js";
 
 export default async function connectDB() {
   const { MONGO_HOST, MONGO_PORT, SERVICE_NAME } = process.env;

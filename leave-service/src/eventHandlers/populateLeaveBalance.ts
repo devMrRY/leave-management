@@ -1,4 +1,4 @@
-import { setDefaultLeaveAllocation, updateManagerInLeaves } from "../models/repository/leave";
+import { setDefaultLeaveAllocation, updateManagerInLeaves } from "../models/repository/leave.js";
 import { logger } from "@myorg/shared";
 
 export const handlePopulateUserLeaveBalance = async (event: any) => {

@@ -9,14 +9,14 @@ import {
   cancelLeave,
 } from '../controllers/leaveController.js';
 import { authorizeRoles } from '../middleware/verifyRoles.js';
-import { validateBody, validateParams, validateQuery } from '../middleware/validateRequest';
+import { validateBody, validateParams, validateQuery } from '../middleware/validateRequest.js';
 import {
   applyLeaveSchema,
   approveLeaveSchema,
   rejectLeaveSchema,
   leaveIdParamSchema,
   leaveRequestsQuerySchema,
-} from '../schemas/leaveSchemas';
+} from '../schemas/leaveSchemas.js';
 import { UserRole } from '../shared/constants.js';
 import { verifyToken } from '../middleware/verifyToken.js';
 

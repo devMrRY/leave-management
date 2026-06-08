@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from "express";
 import { verifyToken as jwtVerify } from "../utils/tokenUtils.js";
-import { requestContext } from "../utils/request-context";
+import { requestContext } from "../utils/request-context.js";
 
 declare global {
   namespace Express {

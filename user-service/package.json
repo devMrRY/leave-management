@@ -4,9 +4,11 @@
   "type": "module",
   "main": "dist/app.js",
   "scripts": {
-    "start": "node dist/app.js",
+    "start": "node --loader tsconfig-paths/register.js dist/app.js",
     "dev": "tsx src/app.ts",
-    "build": "tsc"
+    "build": "tsc -p tsconfig.json",
+    "clean": "rimraf dist",
+    "rebuild": "npm run clean && npm run build"
   },
   "dependencies": {
     "@myorg/shared": "git+https://github.com/devMrRY/leave-management-shared.git",
@@ -24,6 +26,7 @@
     "@types/express": "~5.0.6",
     "@types/jsonwebtoken": "~9.0.10",
     "tsx": "^4.22.3",
-    "typescript": "^5.9.3"
+    "typescript": "^5.9.3",
+    "rimraf": "^5.0.0"
   }
 }

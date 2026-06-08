@@ -6,7 +6,7 @@ import {
 import {
   handlePopulateUserLeaveBalance,
   handleUpdateManager,
-} from "../eventHandlers/populateLeaveBalance";
+} from "../eventHandlers/populateLeaveBalance.js";
 
 export const startConsumer = async () => {
   const ch = await connectChannel();

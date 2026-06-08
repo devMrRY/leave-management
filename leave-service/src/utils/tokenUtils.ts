@@ -1,5 +1,5 @@
 import jwt from "jsonwebtoken";
-import { UserRole } from "../shared/constants";
+import { UserRole } from "../shared/constants.js";
 
 const JWT_SECRET: jwt.Secret = (process.env.JWT_SECRET || "secret") as jwt.Secret;
 

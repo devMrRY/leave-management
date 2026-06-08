@@ -1,5 +1,5 @@
 import mongoose, { Document, Schema } from 'mongoose';
-import { LeaveType } from './constants';
+import { LeaveType } from './constants.js';
 
 export interface ILeaveBalance extends Document {
   employeeId: string;

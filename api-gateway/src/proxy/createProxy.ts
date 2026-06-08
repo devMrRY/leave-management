@@ -1,5 +1,5 @@
 import { createProxyMiddleware } from "http-proxy-middleware";
-import { serviceRegistry, logger } from "@myorg/shared";
+import { serviceRegistry, getCircuitBreaker } from "@myorg/shared";
 
 export function createServiceProxy({
   serviceName,
@@ -15,12 +15,19 @@ export function createServiceProxy({
     cookieDomainRewrite: "localhost",
 
     router: async () => {
-      const url = await serviceRegistry.discover(serviceName);
+      // protect discovery with a circuit breaker so gateway can fast-fail when service unstable
+      const discoverAction = async () => {
+        const url = await serviceRegistry.discover(serviceName);
+        if (!url) throw new Error(`No healthy ${serviceName} instance found`);
+        return url;
+      };
 
-      if (!url) {
-        throw new Error(`No healthy ${serviceName} instance found`);
-      }
+      const discoverBreaker = getCircuitBreaker(`service:${serviceName}`, discoverAction, async () => {
+        // fallback: throw service unavailable to cause proxy to return 503
+        throw new Error(`Service ${serviceName} unavailable`);
+      });
 
+      const url = await discoverBreaker.fire();
       return url;
     },
 

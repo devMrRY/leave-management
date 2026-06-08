@@ -2,7 +2,7 @@ import "./utils/loadEnvConfig.js";
 import "./tracing.js";
 import express from "express";
 import "express-async-errors";
-import leaveRouter from "./routes/leave";
+import leaveRouter from "./routes/leave.js";
 import pinoHttp from "pino-http";
 import connectDB from "./db.js";
 import { startConsumer } from "./events/leave.consumer.js";
@@ -18,7 +18,7 @@ process.on("unhandledRejection", handleCrash);
 app.use(express.json());
 
 async function start() {
-  app.use(pinoHttp({ logger }));
+  app.use((pinoHttp as any)({ logger }));
 
   connectDB();
   startConsumer();

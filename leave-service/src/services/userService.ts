@@ -1,5 +1,5 @@
 import { logger } from "@myorg/shared";
-import { getServiceClient } from "../utils/getServiceClient";
+import { getServiceClient } from "../utils/getServiceClient.js";
 
 export const getEmployeeDetails = async (employeeIds: string[]) => {
   try {

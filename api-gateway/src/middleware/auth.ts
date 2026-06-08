@@ -1,5 +1,5 @@
 import rateLimit from "express-rate-limit";
-import { verifyJwtGateway } from "./verifyJwt";
+import { verifyJwtGateway } from "./verifyJwt.js";
 
 const authLimiter = rateLimit({
     windowMs: 10 * 60 * 1000,

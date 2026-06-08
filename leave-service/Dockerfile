@@ -4,6 +4,9 @@ COPY package*.json ./
 # install all deps so dev scripts (tsx) are available
 RUN npm ci
 COPY . .
-ENV NODE_ENV=development
-EXPOSE 4000
-CMD ["npm", "run", "dev"]
+
+# Build TypeScript into dist during image build
+RUN npm run build
+
+# Run production start (uses built `dist/app.js`)
+CMD ["npm", "start"]
