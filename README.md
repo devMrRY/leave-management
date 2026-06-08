@@ -23,8 +23,6 @@ A microservices-based Leave Management System built using:
 * leave-management: https://github.com/devMrRY/leave-management.git
 * leave-management-shared: https://github.com/devMrRY/leave-management-shared.git
 
-** code for leave-management is on master branch
-
 ---
 
 --- 
