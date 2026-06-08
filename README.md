@@ -18,6 +18,22 @@ A microservices-based Leave Management System built using:
 
 ---
 
+## GITHUB URL
+
+* leave-management: https://github.com/devMrRY/leave-management.git
+* leave-management-shared: https://github.com/devMrRY/leave-management-shared.git
+
+** code for leave-management is on master branch
+
+---
+
+--- 
+
+## DEMO VIDEO
+
+Watch the demo recording: [nagp_3193243_leave_microservices_demo.mp4](https://drive.google.com/file/d/1llpXqtLQIhxLPXtyoc0KKQCVMOwQKkXq/view?usp=sharing)
+
+
 ## Services
 
 The system consists of the following services:
