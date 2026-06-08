@@ -102,10 +102,18 @@ export const getPendingLeaveRequests = async (
   );
   let userDetailsMap = new Map<string, any>();
 
-  if (employeeIds.length > 0) {
-    const users = await getEmployeeDetails(employeeIds);
-    userDetailsMap = new Map(users.map((user: any) => [user.employeeId, user]));
+  if (!employeeIds.length) {
+    logger.info(
+      { managerId },
+      "No pending leave requests found for this manager",
+    );
+    return res.json({
+      leaves: [],
+      message: "No pending leave requests found for this manager",
+    });
   }
+  const users = await getEmployeeDetails(employeeIds);
+  userDetailsMap = new Map(users.map((user: any) => [user.employeeId, user]));
 
   const leavesWithDetails = result.leaves.map((leave) => {
     const leaveObj =
@@ -119,7 +127,7 @@ export const getPendingLeaveRequests = async (
     { leavesWithDetails: JSON.stringify(leavesWithDetails) },
     "final response sending from getPendingLeaveRequests",
   );
-  res.json(leavesWithDetails);
+  res.json({ leaves: leavesWithDetails });
 };
 
 /**
